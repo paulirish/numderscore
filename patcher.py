@@ -37,6 +37,7 @@ class deferred_map:
 def gen_feature(names, digit_groups, monospace, feature_name):
     feature_commas = 'dgco'
     feature_underscores = 'dgun'
+    feature_undergroup = 'dgug'
     feature_dots = 'dgdo'
     feature_comma_decimals = 'dgcd'
     feature_dot_decimals = 'dgdd'
@@ -97,6 +98,10 @@ lookup GROUP_DECIMALS {{
     sub [ {dot_name} {comma_name} @group_R ] @capture_R @capture_R @capture_R' @capture_R by @group_R;
 }} GROUP_DECIMALS;
 
+lookup undergroup {{
+    sub @group_L @group_L @group_L' by @group_L_undergroup;
+}} undergroup;
+
 lookup REFLOW_DIGITS {{
     {ifdef("phase1_L")} sub @group_L @capture_L' by @phase1_L;
     {ifdef("phase2_L")} sub @phase1_L @capture_L' by @phase2_L;
@@ -112,6 +117,7 @@ lookup REFLOW_DIGITS {{
     sub @capture_L' by @digits;
     sub @xcapture_L' by @xdigits;
     sub @capture_R' by @digits;
+    sub @group_L_undergroup' by @group_L;
 }} REFLOW_DIGITS;
 """
 
@@ -167,6 +173,18 @@ feature {feature_dot_decimals} {{
     sub @group_L' by @group_L_dot;
     sub @group_R' by @group_R_dot;
 }} {feature_dot_decimals};
+
+
+feature {feature_undergroup} {{
+    lookup CAPTURE;
+    lookup GROUP_DIGITS;
+    lookup undergroup;
+    # Move REFLOW_DIGITS to the end 
+    lookup REFLOW_DIGITS; 
+
+    sub @group_L' by @group_L_undergroup;
+    sub @group_R' by @group_R_undergroup;
+}} {feature_undergroup};
 """
     wholefile = '\n'.join([ preamble, setup, lookups, features ])
     with open('mods.fea', 'w') as f:
@@ -188,26 +206,29 @@ def resize_glyph(glyph, font, from_name, gap_size, monospace):
             mat = psMat.translate(abs(gap_size), 0)
             glyph.transform(mat)
 
-def insert_separator(glyph, font, separator, gap_size, monospace):
-    separator_width = font[separator].width
-    x_shift = (abs(gap_size) - separator_width) // 2
-    if gap_size < 0:
-        x_shift = glyph.width - abs(gap_size) + x_shift
+def insert_separator(glyph, font, separators, gap_size, monospace):
+    """Inserts multiple separators into a glyph."""
+    total_separator_width = sum(font[sep].width for sep in separators)
+    x_offset = (glyph.width - total_separator_width) / 2
 
-    if separator == 'underscore':
-        # Calculate y_shift to position underscore slightly below baseline
-        height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1] 
-        underscore_ymax = font[separator].boundingBox()[3]
-        y_shift = -(height_of_x / 10) - underscore_ymax
+    for i, separator in enumerate(separators):
+        separator_width = font[separator].width
+        x_shift = x_offset + i * separator_width  
 
-        # Shorten the underscore and adjust x_shift for centering
-        x_scale = 0.75
-        x_shift += (separator_width * x_scale) * x_scale / 4
-        mat = psMat.compose(psMat.scale(x_scale, 1), psMat.translate(x_shift, y_shift))
-    else:
-        mat = psMat.translate(x_shift, 0)
+        if separator == 'underscore':
+            # Calculate y_shift to position underscore slightly below baseline
+            height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1]
+            underscore_ymax = font[separator].boundingBox()[3]
+            y_shift = -(height_of_x / 10) - underscore_ymax
 
-    glyph.addReference(separator, mat)
+            # Shorten the underscore and adjust x_shift for centering
+            x_scale = 0.75
+            x_shift += (separator_width * x_scale) * x_scale / 4
+            mat = psMat.compose(psMat.scale(x_scale, 1), psMat.translate(x_shift, y_shift))
+        else:
+            mat = psMat.translate(x_shift, 0)
+
+        glyph.addReference(separator, mat)
 
 def annotate_glyph(glyph, font, annotation):
     anno_width = font[annotation].width
@@ -263,7 +284,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
         font.appendSFNTName(
             'English (US)', 'Compatible Full', font.fullname)
 
-    print(f'Sizes of dot: {sizes["."]}  comma: {sizes[","]}  space: {sizes[" "]}  zero: {sizes["0"]}  Gap: {gap_size}')
+    print(f'Sizes of dot: {sizes["."]}  comma: {sizes[","]}  space: {sizes[" "]}  underscore: {sizes["_"]}  zero: {sizes["0"]}  Gap: {gap_size}')
 
     def make_copy(to_name, from_name, shift, gap_size=0, separator=None, annotation=None):
         glyph = font.createChar(-1, to_name)
@@ -272,8 +293,13 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
         if shift != 0: mat = psMat.compose(mat, psMat.translate(shift, 0))
         glyph.addReference(from_name, mat)
         resize_glyph(glyph, font, from_name, gap_size, monospace)
-        if separator is not None:
-            insert_separator(glyph, font, names[separator], gap_size, monospace)
+        
+        if separator is not None: 
+            if isinstance(separator, list):
+                insert_separator(glyph, font, [names[sep] for sep in separator], gap_size, monospace)
+            else:
+                insert_separator(glyph, font, names[separator], gap_size, monospace)
+
         if annotation is not None:
             annotate_glyph(glyph, font, names[annotation])
 
@@ -293,6 +319,8 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
             ( 'group_R_comma', ',',  True, DECIMAL_LIST,     ')' ),
             ( 'group_L_underscore', '_', False, DECIMAL_LIST,     '{' ),
             ( 'group_R_underscore', '_',  True, DECIMAL_LIST,     '}' ),
+            ( 'group_L_undergroup',  ['_', '_', '_'], False, DECIMAL_LIST,     '£' ),
+            ( 'group_R_undergroup',  ['_', '_', '_'], True, DECIMAL_LIST,     '¶' ),
             ]:
         if not debug_annotate: anno = None
         table = []

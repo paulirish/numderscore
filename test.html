@@ -46,16 +46,16 @@
       }
 
       .font-test {
-        font-family: "myFont";
+        font-family: "myMono";
         font-feature-settings: normal;
-        font-feature-settings: "dgun";
+        font-feature-settings: "dgug";
       }
 
       .mono-test {
         font-family: "myMono";
-        font-feature-settings: "dgun";
+        font-feature-settings: "dgug";
       }
-      .mono-test:hover {
+      .font-test:hover, .mono-test:hover {
         font-family: "oldMono";
       }
 
@@ -65,7 +65,7 @@
 
       .font-test-plain {
         font-family: "myFont";
-        font-feature-settings: -"dgsp";
+        font-feature-settings: normal;
       }
 
       .spaces-thousands {
@@ -76,8 +76,12 @@
         font-feature-settings: "dgco";
       }
 
-      .underscore-thousands {
+      .dgun {
         font-feature-settings: "dgun";
+      }
+
+      .dgug {
+        font-feature-settings: "dgug";
       }
 
       .comma-decimals {
@@ -144,8 +148,8 @@ the quick brown fox jumps over the lazy dog
 raw: 12345
     </div>
     <div> &numsp; </div> -->
-    <div class="mono-test underscore-thousands" align="right">
-<div align="center">"dgun" mono</div>
+    <div class="mono-test dgug" align="right">
+<div align="center">"dgug" mono</div>
          3141<br/>
         31415<br/>
      31415926<br/> 
@@ -198,7 +202,7 @@ raw: 12345
 raw: 12345
     </div>
     <div> &numsp; </div> -->
-    <div class="font-test underscore-thousands" align="right">
+    <div class="font-test dgun" align="right">
 <div align="center">"dgun"</div>
          3141<br/>
         31415<br/>
