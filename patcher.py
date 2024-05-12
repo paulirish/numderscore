@@ -225,6 +225,9 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
     names = deferred_map(lambda o: o.glyphname, font)
     sizes = deferred_map(lambda o: o.width, font)
 
+    # overwrite args and dynamically set this.
+    monospace = is_font_monospaced(font)
+
     if isinstance(gap_size, str):
         if len(gap_size) == 1:
             gap_size = sizes[gap_size]
@@ -357,7 +360,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
 
     return out_name
 
-def is_monospaced(font):
+def is_font_monospaced(font):
     """Checks if a font is likely monospaced by comparing character widths."""
     widths = [font[char].width for char in "iIlW"]  # Characters with varied typical widths
     return len(set(widths)) == 1  # True if all widths are the same
@@ -389,7 +392,7 @@ def main(argv):
                         help='feature name to use to enable ligation, try "calt" for always-on',
                         type=str, default="dgsp")
     parser.add_argument('--monospace',
-                        help='squish all numbers, including decimals and ones less than 4 digits, use with --squish flag',
+                        help='ACTUALLY this is done automatically if the input font is determined to be monospace. When true: squish all numbers, including decimals and ones less than 4 digits, use with --squish flag',
                         default=False, action='store_true')
     parser.add_argument('--gap-size', help='size of space for thousand separator, try 300 or ","', type=str, default=",")
     parser.add_argument('--squish', help='horizontal scale to apply to the digits to maybe make them more readable when shifted', type=float, default=1.0)

@@ -17,6 +17,8 @@ Provisional names for the features are:
  - `dgcd` as above, but inserting commas into the decimals as well
  - `dgdo` to enable digit grouping of whole numbers with dots (and replacing dot with comma, use with caution)
  - `dgdd` as above, but inserting dots into the decimals as well
+ - `dgun` digit grouping with underscores (in decimals as well)
+
 
 Used in contexts where these features cannot be switched on externally, it's
 possible to rename the first verison to something which will be enabeld by
@@ -56,8 +58,8 @@ or, in fontconfig:
      </match>
 ```
 
-Here's some other documentation about using stylistic sets (just change `ss01` to `dgsp`):
- - https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets
+Here's some other documentation about using stylistic sets in various applications:
+ - https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets   (just change `ss01` to `dgsp`)
 
 Or if all of that is too much hassle or isn't working out right, just bake it
 in as the default, by passing `--feature-name=calt` to the patcher.

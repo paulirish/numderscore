@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Numderline Test</title>
-    <meta http-equiv="refresh" content="2">
+    <meta http-equiv="refresh" content="10">
     <style type="text/css">
       @font-face {
         font-family: "myFont";
@@ -40,14 +40,23 @@
         src: url("out/mono.ttf");
       }
 
+      @font-face {
+        font-family: "oldMono";
+        src: url("out/oldmono.ttf");
+      }
+
       .font-test {
         font-family: "myFont";
+        font-feature-settings: normal;
         font-feature-settings: "dgun";
       }
 
       .mono-test {
         font-family: "myMono";
         font-feature-settings: "dgun";
+      }
+      .mono-test:hover {
+        font-family: "oldMono";
       }
 
       .big {
@@ -70,7 +79,6 @@
       .underscore-thousands {
         font-feature-settings: "dgun";
       }
-
 
       .comma-decimals {
         font-feature-settings: "dgcd";
