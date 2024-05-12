@@ -189,27 +189,24 @@ def resize_glyph(glyph, font, from_name, gap_size, monospace):
             glyph.transform(mat)
 
 def insert_separator(glyph, font, separator, gap_size, monospace):
-    x_shift = (abs(gap_size) - font[separator].width) // 2
+    separator_width = font[separator].width
+    x_shift = (abs(gap_size) - separator_width) // 2
     if gap_size < 0:
         x_shift = glyph.width - abs(gap_size) + x_shift
 
     if separator == 'underscore':
-        _box = font[separator].boundingBox()  # Get bounding box of underscore
-        ex_box = font['x'].boundingBox()
-        ex_height = ex_box[3] - ex_box[1]
-        ex_box_ymax = _box[3] 
-        # Ensure the underscore is a tad bit below the baseline
-        y_shift = -(ex_height / 10) - ex_box_ymax;
-        # Shorten the underscore a bit. And make sure it's positioned well.
-        x_frac = 0.75;
-        x_shift += (font[separator].width * x_frac) * x_frac / 4
-        mat = psMat.compose(
-            psMat.scale(x_frac, 1),
-            psMat.translate(x_shift, y_shift),
-        )
+        # Calculate y_shift to position underscore slightly below baseline
+        height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1] 
+        underscore_ymax = font[separator].boundingBox()[3]
+        y_shift = -(height_of_x / 10) - underscore_ymax
+
+        # Shorten the underscore and adjust x_shift for centering
+        x_scale = 0.75
+        x_shift += (separator_width * x_scale) * x_scale / 4
+        mat = psMat.compose(psMat.scale(x_scale, 1), psMat.translate(x_shift, y_shift))
     else:
-        y_shift = 0
-        mat = psMat.translate(x_shift, y_shift)
+        mat = psMat.translate(x_shift, 0)
+
     glyph.addReference(separator, mat)
 
 def annotate_glyph(glyph, font, annotation):
