@@ -36,7 +36,7 @@
 
       .font-test {
         font-family: "myFont";
-        font-feature-settings: "dgsp";
+        font-feature-settings: "dgun";
       }
 
       .big {
@@ -48,9 +48,18 @@
         font-feature-settings: -"dgsp";
       }
 
+      .spaces-thousands {
+        font-feature-settings: "dgsp";
+      }
+
       .comma-thousands {
         font-feature-settings: "dgco";
       }
+
+      .underscore-thousands {
+        font-feature-settings: "dgun";
+      }
+
 
       .comma-decimals {
         font-feature-settings: "dgcd";
@@ -115,7 +124,7 @@ the quick brown fox jumps over the lazy dog
 raw: 12345
     </div>
     <div> &numsp; </div>
-    <div class="font-test" align="right">
+    <div class="font-test spaces-thousands" align="right">
 <div align="center">"dgsp"</div>
          3141<br/>
         31415<br/>
@@ -169,8 +178,8 @@ raw: 12345
 raw: 12345
     </div>
     <div> &numsp; </div>
-    <div class="font-test dot-decimals" align="right">
-<div align="center">"dgdd"</div>
+    <div class="font-test underscore-thousands" align="right">
+<div align="center">"dgun"</div>
          3141<br/>
         31415<br/>
      31415926<br/>

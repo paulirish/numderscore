@@ -6,14 +6,6 @@ import argparse
 import sys
 import random
 import re
-import subprocess
-import os.path
-import json
-import shutil
-import zipfile
-
-from itertools import chain
-from collections import defaultdict
 
 try:
     import fontforge
@@ -44,11 +36,13 @@ class deferred_map:
 
 def gen_feature(names, digit_groups, monospace, feature_name):
     feature_commas = 'dgco'
+    feature_underscores = 'dgun'
     feature_dots = 'dgdo'
     feature_comma_decimals = 'dgcd'
     feature_dot_decimals = 'dgdd'
 
     dot_name = names['.']
+    underscore_name = names['_']
     comma_name = names[',']
 
     preamble = f"""languagesystem DFLT dflt;
@@ -136,6 +130,15 @@ feature {feature_commas} {{
     lookup REFLOW_DIGITS;
     sub @group_L' by @group_L_comma;
 }} {feature_commas};
+
+feature {feature_underscores} {{
+    lookup CAPTURE;
+    lookup GROUP_DIGITS;
+    lookup GROUP_DECIMALS;
+    lookup REFLOW_DIGITS;
+    sub @group_L' by @group_L_underscore;
+    sub @group_R' by @group_R_underscore;
+}} {feature_underscores};
 
 feature {feature_comma_decimals} {{
     lookup CAPTURE;
@@ -270,6 +273,8 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
             ( 'group_R_dot',   '.',  True, DECIMAL_LIST,     ']' ),
             ( 'group_L_comma', ',', False, DECIMAL_LIST,     '(' ),
             ( 'group_R_comma', ',',  True, DECIMAL_LIST,     ')' ),
+            ( 'group_L_underscore', '_', False, DECIMAL_LIST,     '{' ),
+            ( 'group_R_underscore', '_',  True, DECIMAL_LIST,     '}' ),
             ]:
         if not debug_annotate: anno = None
         table = []
