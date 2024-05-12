@@ -181,6 +181,7 @@ def resize_glyph(glyph, font, from_name, gap_size, monospace):
         # state than if we don't do it at all.
         glyph.useRefsMetrics(from_name, False)
         if gap_size < 0:
+            # Decimal seperator
             glyph.width += abs(gap_size)
         else:
             # glyph seems to grow on its own with this transform
@@ -191,7 +192,24 @@ def insert_separator(glyph, font, separator, gap_size, monospace):
     x_shift = (abs(gap_size) - font[separator].width) // 2
     if gap_size < 0:
         x_shift = glyph.width - abs(gap_size) + x_shift
-    mat = psMat.translate(x_shift, 0)
+
+    if separator == 'underscore':
+        _box = font[separator].boundingBox()  # Get bounding box of underscore
+        ex_box = font['x'].boundingBox()
+        ex_height = ex_box[3] - ex_box[1]
+        ex_box_ymax = _box[3] 
+        # Ensure the underscore is a tad bit below the baseline
+        y_shift = -(ex_height / 10) - ex_box_ymax;
+        # Shorten the underscore a bit. And make sure it's positioned well.
+        x_frac = 0.75;
+        x_shift += (font[separator].width * x_frac) * x_frac / 4
+        mat = psMat.compose(
+            psMat.scale(x_frac, 1),
+            psMat.translate(x_shift, y_shift),
+        )
+    else:
+        y_shift = 0
+        mat = psMat.translate(x_shift, y_shift)
     glyph.addReference(separator, mat)
 
 def annotate_glyph(glyph, font, annotation):
@@ -342,6 +360,10 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
 
     return out_name
 
+def is_monospaced(font):
+    """Checks if a font is likely monospaced by comparing character widths."""
+    widths = [font[char].width for char in "iIlW"]  # Characters with varied typical widths
+    return len(set(widths)) == 1  # True if all widths are the same
 
 def patch_fonts(target_fonts, **kwargs):
     res = None
