@@ -1,7 +1,6 @@
 <html>
   <head>
     <title>Numderline Test</title>
-    <meta http-equiv="refresh" content="10">
     <style type="text/css">
       @font-face {
         font-family: "myFont";
@@ -35,28 +34,9 @@
         /*src: url("out/merged.ttf");*/
       }
 
-      @font-face {
-        font-family: "myMono";
-        src: url("out/mono.ttf");
-      }
-
-      @font-face {
-        font-family: "oldMono";
-        src: url("out/oldmono.ttf");
-      }
-
       .font-test {
         font-family: "myFont";
-        font-feature-settings: normal;
-        font-feature-settings: "dgun";
-      }
-
-      .mono-test {
-        font-family: "myMono";
-        font-feature-settings: "dgun";
-      }
-      .mono-test:hover {
-        font-family: "oldMono";
+        font-feature-settings: "dgsp";
       }
 
       .big {
@@ -68,16 +48,8 @@
         font-feature-settings: -"dgsp";
       }
 
-      .spaces-thousands {
-        font-feature-settings: "dgsp";
-      }
-
       .comma-thousands {
         font-feature-settings: "dgco";
-      }
-
-      .underscore-thousands {
-        font-feature-settings: "dgun";
       }
 
       .comma-decimals {
@@ -114,10 +86,9 @@
     <textarea class="font-test">
 the quick brown fox jumps over the lazy dog
 1234567890 123
-1234567 123423,124356.0000000
-123456789000000.987654321000000000</textarea>
+1234567 123423,124356.0000000</textarea>
 <div class="container" style="display: flex;">
-    <!-- <div class="font-test-plain" align="right">
+    <div class="font-test-plain" align="right">
 <div align="center">""</div>
          3141<br/>
         31415<br/>
@@ -143,12 +114,12 @@ the quick brown fox jumps over the lazy dog
 &amp;thinsp;: 12&thinsp;345<br/>
 raw: 12345
     </div>
-    <div> &numsp; </div> -->
-    <div class="mono-test underscore-thousands" align="right">
-<div align="center">"dgun" mono</div>
+    <div> &numsp; </div>
+    <div class="font-test" align="right">
+<div align="center">"dgsp"</div>
          3141<br/>
         31415<br/>
-     31415926<br/> 
+     31415926<br/>
     314159265<br/>
    3141592653<br/>
   31415926535<br/>
@@ -171,7 +142,7 @@ raw: 12345
 raw: 12345
     </div>
     <div> &numsp; </div>
-    <!-- <div class="font-test comma-decimals" align="right">
+    <div class="font-test comma-decimals" align="right">
 <div align="center">"dgcd"</div>
          3141<br/>
         31415<br/>
@@ -197,9 +168,9 @@ raw: 12345
 &amp;thinsp;: 12&thinsp;345<br/>
 raw: 12345
     </div>
-    <div> &numsp; </div> -->
-    <div class="font-test underscore-thousands" align="right">
-<div align="center">"dgun"</div>
+    <div> &numsp; </div>
+    <div class="font-test dot-decimals" align="right">
+<div align="center">"dgdd"</div>
          3141<br/>
         31415<br/>
      31415926<br/>
