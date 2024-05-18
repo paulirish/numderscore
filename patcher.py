@@ -356,6 +356,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
     # replacement to comply with SIL Open Font License
     out_name = font.fullname.replace('Source ', 'Sauce ')
     ft_font.save(out_path(out_name))
+    ft_font.save(f'out/latest.ttf')
     print(f"> Created '{out_name}'")
 
     return out_name

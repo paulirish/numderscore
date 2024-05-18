@@ -10,7 +10,7 @@
         /*src: url("out/Sauce Code Pro Light with NSub.ttf");*/
         /*src: url("out/Hack Regular with Numderline.ttf");*/
         /*src: url("out/Hack Regular with NGroup.ttf");*/
-        src: url("out/tmp.ttf");
+        src: url("out/latest.ttf");
         /*src: url("out/DejaVu Sans Mono with Numderline.ttf");*/
         /*src: url("out/DejaVu Sans Mono with NShift80.ttf");*/
         /*src: url("out/DejaVu Sans Mono with NShift100Squish0p85.ttf");*/
@@ -36,32 +36,44 @@
 
       .font-test {
         font-family: "myFont";
-        font-feature-settings: "dgsp";
       }
 
       .big {
         font-size: 18pt;
       }
 
-      .font-test-plain {
-        font-family: "myFont";
-        font-feature-settings: -"dgsp";
+      .plain {
+        font-feature-settings: normal;
       }
 
-      .comma-thousands {
+      .dgsp {
+        font-feature-settings: "dgsp";
+      }
+
+      .dgco {
         font-feature-settings: "dgco";
       }
 
-      .comma-decimals {
+      .dgcd {
         font-feature-settings: "dgcd";
       }
 
-      .dot-thousands {
+      .dgdo {
         font-feature-settings: "dgdo";
       }
 
-      .dot-decimals {
+      .dgdd {
         font-feature-settings: "dgdd";
+      }      
+      
+      .dgun {
+        font-feature-settings: "dgun";
+      }
+
+      #hoverPlain:checked ~ .container > .font-test:hover,
+      #hoverPlain:checked ~ article > .font-test:hover {
+        font-feature-settings: normal;
+        outline: 1px solid #e6e6e6;
       }
 
       .small {
@@ -72,51 +84,36 @@
         padding-left: 5px;
       }
 
+      .container,
       pre {
         margin: 10px;
       }
 
       textarea {
-        width: 800px;
+        width: 100%;
         height: 100px;
+        font-feature-settings: inherit;
+      }
+
+      input, label, select, option {
+        font-family: sans-serif;
+        font-size: 14px;
+        color: grey;
       }
     </style>
   </head>
-  <body>
+  <div>
     <textarea class="font-test">
 the quick brown fox jumps over the lazy dog
 1234567890 123
 1234567 123423,124356.0000000
--123456789000000.987654321000000000</textarea>
-<div class="container" style="display: flex;">
-    <div class="font-test-plain" align="right">
-<div align="center">""</div>
-         3141<br/>
-        31415<br/>
-     31415926<br/>
-    314159265<br/>
-   3141592653<br/>
-  31415926535<br/>
-    0x2718281<br/>
-   0x27182818<br/>
-  0x271828182<br/>
- 0x2718281828<br/>
-0x27182818284<br/>
-     123.4567<br/>
-    123.45678<br/>
-   123.456789<br/>
-  123.4567890<br/>
- 123.45678901<br/>
- a million dollars! ($10000000.00)<br/>
- in the range 1..1000<br/>
- in the range 1.23..10.34<br/>
- c = (10000,20000)<br/>
- c = (1.5000,2.4000)<br/>
-&amp;thinsp;: 12&thinsp;345<br/>
-raw: 12345
-    </div>
-    <div> &numsp; </div>
-    <div class="font-test" align="right">
+-1234567890.9876543210</textarea>
+
+<br>
+<input type="checkbox" id="hoverPlain"><label for="hoverPlain">Revert to plain on hover (when checked)</label>
+
+<div class="container" style="display: flex; gap: 10px">
+    <div class="font-test dgsp" align="right">
 <div align="center">"dgsp"</div>
          3141<br/>
         31415<br/>
@@ -142,8 +139,7 @@ raw: 12345
 &amp;thinsp;: 12&thinsp;345<br/>
 raw: 12345
     </div>
-    <div> &numsp; </div>
-    <div class="font-test comma-decimals" align="right">
+    <div class="font-test dgcd" align="right">
 <div align="center">"dgcd"</div>
          3141<br/>
         31415<br/>
@@ -169,8 +165,7 @@ raw: 12345
 &amp;thinsp;: 12&thinsp;345<br/>
 raw: 12345
     </div>
-    <div> &numsp; </div>
-    <div class="font-test dot-decimals" align="right">
+    <div class="font-test dgdd" align="right">
 <div align="center">"dgdd"</div>
          3141<br/>
         31415<br/>
@@ -196,7 +191,47 @@ raw: 12345
 &amp;thinsp;: 12&thinsp;345<br/>
 raw: 12345
     </div>
+    <div class="font-test dgun" align="right">
+<div align="center">"dgun"</div>
+         3141<br/>
+        31415<br/>
+     31415926<br/>
+    314159265<br/>
+   3141592653<br/>
+  31415926535<br/>
+    0x2718281<br/>
+   0x27182818<br/>
+  0x271828182<br/>
+ 0x2718281828<br/>
+0x27182818284<br/>
+     123.4567<br/>
+    123.45678<br/>
+   123.456789<br/>
+  123.4567890<br/>
+ 123.45678901<br/>
+ a million dollars! ($10000000.00)<br/>
+ in the range 1..1000<br/>
+ in the range 1.23..10.34<br/>
+ c = (10000,20000)<br/>
+ c = (1.5000,2.4000)<br/>
+&amp;thinsp;: 12&thinsp;345<br/>
+raw: 12345
+    </div>
 </div>
+
+<br><br>
+
+<select id="choice">
+  <option>dgsp</option>
+  <option>dgco</option>
+  <option>dgcd</option>
+  <option>dgdo</option>
+  <option>dgdd</option>
+  <option>dgun</option>
+  <option value="plain">(normal)</option>
+</select> <label for="choice">Feature to apply below</label>
+
+<article>
     <pre class="font-test">
 the quick brown fox jumps over the lazy dog
 this <= that && why == zeven === five >>= lol
@@ -317,5 +352,22 @@ time                       system      flow_type   latency_ns  epoch            
 2019-10-02 22:11:59 -0400  test        Order            57342  1570068719.15835          950924         404072538
 2019-10-02 22:11:59 -0400  test        Cancel           35902  1570068719.15836          411195       29564962362
     </pre>
+</article>
+
+    <script>
+      // Put an editable textarea in each column
+      const textarea = document.getElementsByTagName('textarea')[0];
+      for (const block of document.querySelectorAll('.container .font-test')) {
+        const clone = textarea.cloneNode();
+        block.append(clone);
+      }
+      textarea.remove();
+
+      // Dropdown to choose feature
+      document.querySelector('#choice').addEventListener('change', e => {
+        document.querySelector('article').className = e.target.value;
+      });
+      document.querySelector('#choice').dispatchEvent(new Event('change'));
+    </script>
   </body>
 </html>
