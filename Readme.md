@@ -11,7 +11,7 @@ inline.  It looks a bit like this:
 This is achieved by adding font features to font files which enable outboard
 configuration of number formatting.
 
-Provisional names for the features are:
+Provisional names for the **d**igit **g**rouping features are:
  - `dgsp` to enable digit grouping with spaces
  - `dgco` to enable digit grouping of whole numbers with commas
  - `dgcd` as above, but inserting commas into the decimals as well
@@ -21,11 +21,17 @@ Provisional names for the features are:
 
 
 Used in contexts where these features cannot be switched on externally, it's
-possible to rename the first verison to something which will be enabeld by
+possible to rename the first verison to something which will be enabled by
 default, like `calt`.
 
 ## Usage
-Patch a font to add the extra stuff.  Then, if you have [CSS
+Patch a font to add the extra stuff:
+
+```sh
+python3 patcher.py SomeFont.ttf
+```
+
+  Then, if you have [CSS
 control](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings)
 over the font, try:
 

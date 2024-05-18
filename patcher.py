@@ -10,12 +10,12 @@ import re
 try:
     import fontforge
     import psMat
-    # from fontTools.misc.py23 import *
     from fontTools.ttLib import TTFont
     from fontTools.feaLib.builder import addOpenTypeFeatures, Builder
-except ImportError:
-    sys.stderr.write('The required FontForge and fonttools modules could not be loaded.\n\n')
-    sys.stderr.write('You need FontForge with Python bindings for this script to work.\n')
+except ImportError as e:
+    sys.stderr.write('The required FontForge and fonttools modules could not be loaded.\n')
+    sys.stderr.write(str(e))
+    sys.stderr.write('\nYou need FontForge with Python bindings for this script to work.\n')
     sys.exit(1)
 
 
