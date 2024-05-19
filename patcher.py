@@ -222,6 +222,7 @@ def out_path(name):
 
 def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish, squishy, squish_all, debug_annotate):
     font.encoding = 'ISO10646'
+    print('😊 Patching', font.fullname)
     names = deferred_map(lambda o: o.glyphname, font)
     sizes = deferred_map(lambda o: o.width, font)
 
@@ -362,8 +363,14 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
 
 def is_font_monospaced(font):
     """Checks if a font is likely monospaced by comparing character widths."""
-    widths = [font[char].width for char in "iIlW"]  # Characters with varied typical widths
-    return len(set(widths)) == 1  # True if all widths are the same
+    test_chars = "iIlW"
+    widths = []
+    for char in test_chars:
+        try:
+            widths.append(font[char].width)
+        except TypeError:
+            print(f"Warning: Glyph '{char}' not found in font. Skipping width comparison.")
+    return len(widths) > 0 and len(set(widths)) == 1# True if all found widths are the same
 
 def patch_fonts(target_fonts, **kwargs):
     res = None
