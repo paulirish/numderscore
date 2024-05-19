@@ -1,6 +1,4 @@
 # Numderscore
-Based substantially on [Numderline](https://github.com/trishume/numderline) but
-becoming kind of its own thing as I hack around.
 
 Allows the rendering of digit grouping (thousand separators) in contexts where
 you have some control over the font but don't want to (or can't) edit the text
@@ -9,9 +7,9 @@ inline.  It looks a bit like this:
 ![sample](./sample.png)
 
 This is achieved by adding font features to font files which enable outboard
-configuration of number formatting.
+configuration of number formatting. The 'inserted' characters are baked into the font, so they don't affect copy/paste, syntax highlighting, etc.
 
-Feature names for the  features are:
+Attribution: This project is primarily [`sh1boot`'s `numderspace`](https://github.com/sh1boot/numderline), which is based substantially on [Numderline](https://github.com/trishume/numderline). My (paulirish) updates are adding `dgun`, auto-monospace detection, better test page and docs.
 
 | Feature Name | Example | *D*igit *G*rouping with… |
 | :--- | ---: | :--- |
@@ -32,16 +30,14 @@ python3 patcher.py --help # see available options
 
 ## Usage: Apply the features
 
-If you have [CSS control with `font-feature-settings`](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings) over the font, try:
+If you have [CSS control with `font-feature-settings`](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings) over the font, apply this to the selectors you want formatted as such:
 
 ```CSS
-font-feature-settings: "dgsp";
+font-feature-settings: 'dgsp';
 ```
-for the bits you want formatted that way (try to avoid switching it on
-globally, as it may mess other things up).
 
 
-Various editors/tools using these font-features. See https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets (just change `ss01` to `dgsp`, etc.)
+Various editors/tools allow enabling these font-features; see https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets (just change `ss01` to `dgsp`, etc.)
 
 To use it in a terminal (if you have one which supports ligation), you can use
 a monospaced font and pass `--monospace` to the patcher so that it will
@@ -59,5 +55,7 @@ or `font_features My-Font-with-DigitGrouping dgsp`, or, in fontconfig:
      </match>
 ```
 
-Or if all of that is too much hassle or isn't working out right, just bake
+### Bake in grouping by default
+
+Or… if all of that is too much hassle or isn't working out right, just bake
 in `dgsp` as the default, by passing `--feature-name=calt` to the patcher.
