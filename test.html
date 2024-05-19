@@ -70,10 +70,21 @@
         font-feature-settings: "dgun";
       }
 
-      #hoverPlain:checked ~ .container > .font-test:hover,
-      #hoverPlain:checked ~ article > .font-test:hover {
+      /* CSS only solution for exclusively applying feature on hover */
+      #hoverUpgrade:checked ~ .container > .font-test {
         font-feature-settings: normal;
-        outline: 1px solid #e6e6e6;
+      }
+      
+      .dgsp:hover { font-feature-settings: "dgsp" !important; }
+      .dgco:hover { font-feature-settings: "dgco" !important; }
+      .dgcd:hover { font-feature-settings: "dgcd" !important; }
+      .dgdo:hover { font-feature-settings: "dgdo" !important; }
+      .dgdd:hover { font-feature-settings: "dgdd" !important; }      
+      .dgun:hover { font-feature-settings: "dgun" !important; }
+
+
+      .container .font-test {
+        flex: 1;
       }
 
       .small {
@@ -90,15 +101,22 @@
       }
 
       textarea {
-        width: 100%;
-        height: 100px;
+        min-width: 100%;
+        height: 110px;
         font-feature-settings: inherit;
+        display: block;
       }
 
       input, label, select, option {
         font-family: sans-serif;
         font-size: 14px;
         color: grey;
+        vertical-align: middle;
+      }
+
+      input:has(+ label:hover),
+      select:has(+ label:hover) {
+        filter: drop-shadow(1px 1px 2px #afafaf); 
       }
     </style>
   </head>
@@ -110,7 +128,7 @@ the quick brown fox jumps over the lazy dog
 -1234567890.9876543210</textarea>
 
 <br>
-<input type="checkbox" id="hoverPlain"><label for="hoverPlain">Revert to plain on hover (when checked)</label>
+<input type="checkbox" id="hoverUpgrade"><label for="hoverUpgrade">Only apply feature on hover</label>
 
 <div class="container" style="display: flex; gap: 10px">
     <div class="font-test dgsp" align="right">
@@ -221,7 +239,7 @@ raw: 12345
 
 <br><br>
 
-<select id="choice">
+<select id="choice" multiple style="height: 8lh;">  <!-- the number of options plus 1, ish. -->
   <option>dgsp</option>
   <option>dgco</option>
   <option>dgcd</option>
