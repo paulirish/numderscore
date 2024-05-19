@@ -34,12 +34,13 @@ class deferred_map:
     def __getitem__(self, i):
         return self._f(self._sequence[ord(i) if isinstance(i, str) else i])
 
-def gen_feature(names, digit_groups, monospace, feature_name):
+def gen_feature(names, digit_groups, monospace, default_feature):
+    feature_spaces = 'dgsp'
     feature_commas = 'dgco'
-    feature_underscores = 'dgun'
-    feature_dots = 'dgdo'
     feature_comma_decimals = 'dgcd'
+    feature_dots = 'dgdo'
     feature_dot_decimals = 'dgdd'
+    feature_underscores = 'dgun'
 
     dot_name = names['.']
     underscore_name = names['_']
@@ -116,12 +117,12 @@ lookup REFLOW_DIGITS {{
 """
 
     features = f"""
-feature {feature_name} {{
+feature {feature_spaces} {{
     lookup CAPTURE;
     lookup GROUP_DIGITS;
     lookup GROUP_DECIMALS;
     lookup REFLOW_DIGITS;
-}} {feature_name};
+}} {feature_spaces};
 
 feature {feature_commas} {{
     lookup CAPTURE;
@@ -130,15 +131,6 @@ feature {feature_commas} {{
     lookup REFLOW_DIGITS;
     sub @group_L' by @group_L_comma;
 }} {feature_commas};
-
-feature {feature_underscores} {{
-    lookup CAPTURE;
-    lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_underscore;
-    sub @group_R' by @group_R_underscore;
-}} {feature_underscores};
 
 feature {feature_comma_decimals} {{
     lookup CAPTURE;
@@ -167,7 +159,29 @@ feature {feature_dot_decimals} {{
     sub @group_L' by @group_L_dot;
     sub @group_R' by @group_R_dot;
 }} {feature_dot_decimals};
+
+feature {feature_underscores} {{
+    lookup CAPTURE;
+    lookup GROUP_DIGITS;
+    lookup GROUP_DECIMALS;
+    lookup REFLOW_DIGITS;
+    sub @group_L' by @group_L_underscore;
+    sub @group_R' by @group_R_underscore;
+}} {feature_underscores};
 """
+
+    if default_feature:  # Check if default_feature is not empty
+        pattern = rf"feature {default_feature} \{{\n(.*?)\}} {default_feature};" 
+        match = re.search(pattern, features, re.DOTALL)
+
+        if match:
+            feature_on_by_default = match.group(0).replace(default_feature, 'calt')
+            features += "\n\n" + feature_on_by_default
+            print("FEATURES", features)
+        else:
+            print(f"Default feature {default_feature} not found in the features string.")
+
+
     wholefile = '\n'.join([ preamble, setup, lookups, features ])
     with open('mods.fea', 'w') as f:
         f.write(wholefile)
@@ -220,7 +234,7 @@ def annotate_glyph(glyph, font, annotation):
 def out_path(name):
     return f'out/{name}.ttf'
 
-def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish, squishy, squish_all, debug_annotate):
+def patch_one_font(font, rename_font, monospace, gap_size, squish, squishy, squish_all, debug_annotate, default_feature):
     font.encoding = 'ISO10646'
     names = deferred_map(lambda o: o.glyphname, font)
     sizes = deferred_map(lambda o: o.width, font)
@@ -348,7 +362,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
             glyph = font[digit]
             glyph.layers[1] = squish_layer(glyph.layers[1], squish, squishy)
 
-    gen_feature(names, digit_groups, monospace, feature_name)
+    gen_feature(names, digit_groups, monospace, default_feature)
 
     font.generate('out/tmp.ttf')
     ft_font = TTFont('out/tmp.ttf')
@@ -389,9 +403,9 @@ def main(argv):
     parser.add_argument('--no-rename',
                         help='don\'t add " with Numderline" to the font name',
                         default=True, action='store_false', dest='rename_font')
-    parser.add_argument('--feature-name',
+    parser.add_argument('--default-feature',
                         help='feature name to use to enable ligation, try "calt" for always-on',
-                        type=str, default="dgsp")
+                        type=str, default="")
     parser.add_argument('--monospace',
                         help='ACTUALLY this is done automatically if the input font is determined to be monospace. When true: squish all numbers, including decimals and ones less than 4 digits, use with --squish flag',
                         default=False, action='store_true')
