@@ -8,11 +8,6 @@
     "128": "images/icon-128.png"
   },
 
-  "web_accessible_resources": [{
-      "resources": ["numder_injected.js",  "numder_style.css", "fonts/RobotoDG.ttf", "fonts/RobotoBoldDG.ttf"],
-      "matches": ["*://*/*"]
-   }],
-
   "content_scripts": [
     {
       "matches": [
@@ -25,5 +20,41 @@
       "run_at": "document_end",
       "allframes": true
     }
-  ]
+  ],
+
+  "web_accessible_resources": [{
+      "resources": [
+        "numder_injected.js", 
+        "numder_style.css", 
+
+        "fonts/Roboto-Black-DG.ttf",
+        "fonts/Roboto-Black-Italic-DG.ttf",
+        "fonts/Roboto-Bold-DG.ttf",
+        "fonts/Roboto-Bold-Italic-DG.ttf",
+        "fonts/Roboto-DG.ttf",
+        "fonts/Roboto-Italic-DG.ttf",
+        "fonts/Roboto-Light-DG.ttf",
+        "fonts/Roboto-Light-Italic-DG.ttf",
+        "fonts/Roboto-Medium-DG.ttf",
+        "fonts/Roboto-Medium-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Bold-DG.ttf",
+        "fonts/Roboto-Mono-Bold-Italic-DG.ttf",
+        "fonts/Roboto-Mono-ExtraLight-DG.ttf",
+        "fonts/Roboto-Mono-ExtraLight-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Light-DG.ttf",
+        "fonts/Roboto-Mono-Light-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Medium-DG.ttf",
+        "fonts/Roboto-Mono-Medium-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Regular-DG.ttf",
+        "fonts/Roboto-Mono-SemiBold-DG.ttf",
+        "fonts/Roboto-Mono-SemiBold-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Thin-DG.ttf",
+        "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
+        "fonts/Roboto-Thin-DG.ttf",
+        "fonts/Roboto-Thin-Italic-DG.ttf",
+        "fonts/Droid-Sans-Mono-DG.ttf"
+      ],
+      "matches": ["*://*/*"]
+   }]
 }
