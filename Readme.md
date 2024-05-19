@@ -1,4 +1,4 @@
-# Numderspace
+# Numderscore
 Based substantially on [Numderline](https://github.com/trishume/numderline) but
 becoming kind of its own thing as I hack around.
 
@@ -11,29 +11,28 @@ inline.  It looks a bit like this:
 This is achieved by adding font features to font files which enable outboard
 configuration of number formatting.
 
-Provisional names for the **d**igit **g**rouping features are:
- - `dgsp` to enable digit grouping with spaces
- - `dgco` to enable digit grouping of whole numbers with commas
- - `dgcd` as above, but inserting commas into the decimals as well
- - `dgdo` to enable digit grouping of whole numbers with dots (and replacing dot with comma, use with caution)
- - `dgdd` as above, but inserting dots into the decimals as well
- - `dgun` digit grouping with underscores (in decimals as well)
+Feature names for the  features are:
 
+| Feature Name | Example | *D*igit *G*rouping with… |
+| :--- | ---: | :--- |
+| `dgsp` | `125 603.1415965` | **spaces** within whole numbers |
+| `dgco` | `125,603.1415965` | **commas** within whole numbers |
+| `dgun` | `125_603.141_596_5` | **underscores** within whole numbers and decimals |
+| `dgdo` | `125.603,1415965` | **dots** within whole numbers (and replacing literal dot with comma, use with caution) |
+| `dgdd` | `125.603,141.596.5` | **dots** within whole numbers and decimals (and replacing literal dot with comma, use with caution) |
 
-Used in contexts where these features cannot be switched on externally, it's
-possible to rename the first verison to something which will be enabled by
-default, like `calt`.
-
-## Usage
+## Usage: Patch the font
 Patch a font to add the extra stuff:
 
 ```sh
 python3 patcher.py SomeFont.ttf
+
+python3 patcher.py --help # see available options 
 ```
 
-  Then, if you have [CSS
-control](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings)
-over the font, try:
+## Usage: Apply the features
+
+If you have [CSS control with `font-feature-settings`](https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings) over the font, try:
 
 ```CSS
 font-feature-settings: "dgsp";
@@ -42,19 +41,15 @@ for the bits you want formatted that way (try to avoid switching it on
 globally, as it may mess other things up).
 
 
+Various editors/tools using these font-features. See https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets (just change `ss01` to `dgsp`, etc.)
+
 To use it in a terminal (if you have one which supports ligation), you can use
 a monospaced font and pass `--monospace` to the patcher so that it will
 squeeze glyphs appropriately.
 
-Usage might be configured with a line like:
-```
-font=My Font with DigitGrouping:fontfeatures=dgsp
-```
-or
-```
-font_features My-Font-with-DigitGrouping dgsp
-```
-or, in fontconfig:
+Usage might be configured with a line like: `font=My Font with DigitGrouping:fontfeatures=dgsp`
+or `font_features My-Font-with-DigitGrouping dgsp`, or, in fontconfig:
+
 ```xml
     <match target="pattern">
          <test name="family" compare="contains"><string>DigitGrouping</string></test>
@@ -64,8 +59,5 @@ or, in fontconfig:
      </match>
 ```
 
-Here's some other documentation about using stylistic sets in various applications:
- - https://github.com/tonsky/FiraCode/wiki/How-to-enable-stylistic-sets   (just change `ss01` to `dgsp`)
-
-Or if all of that is too much hassle or isn't working out right, just bake it
-in as the default, by passing `--feature-name=calt` to the patcher.
+Or if all of that is too much hassle or isn't working out right, just bake
+in `dgsp` as the default, by passing `--feature-name=calt` to the patcher.
