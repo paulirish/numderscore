@@ -9,7 +9,7 @@ inline.  It looks a bit like this:
 This is achieved by adding font features to font files which enable outboard
 configuration of number formatting. The 'inserted' characters are baked into the font, so they don't affect copy/paste, syntax highlighting, etc.
 
-Attribution: This project is primarily [`sh1boot`'s `numderspace`](https://github.com/sh1boot/numderline), which is based substantially on [Numderline](https://github.com/trishume/numderline). My (paulirish) updates are adding `dgun`, auto-monospace detection, better test page and docs.
+Attribution: This project is primarily [`sh1boot`'s `numderspace`](https://github.com/sh1boot/numderline), which is based substantially on Tristan Hume's [Numderline](https://thume.ca/numderline/) ([repo](https://github.com/trishume/numderline)). My (paulirish's) updates are adding `dgun`, auto-monospace detection, better test page and docs.
 
 | Feature Name | Example | *D*igit *G*rouping with… |
 | :--- | ---: | :--- |

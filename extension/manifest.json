@@ -1,0 +1,29 @@
+{
+  "name": "Numderscore",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "description": "Hijack fonts with your modified numderscore versions",
+  "icons": {
+    "16": "images/icon-16.png",
+    "128": "images/icon-128.png"
+  },
+
+  "web_accessible_resources": [{
+      "resources": ["numder_injected.js",  "numder_style.css", "fonts/RobotoDG.ttf", "fonts/RobotoBoldDG.ttf"],
+      "matches": ["*://*/*"]
+   }],
+
+  "content_scripts": [
+    {
+      "matches": [
+         "*://*/*"
+      ],
+      "js": [
+        "numder_contentscript.js"
+      ],
+      "css": [],
+      "run_at": "document_end",
+      "allframes": true
+    }
+  ]
+}
