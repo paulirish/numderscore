@@ -65,11 +65,15 @@ languagesystem kana dflt;
     m = '' if monospace else '#'
     not_m = '#' if monospace else ''
 
+    # https://adobe-type-tools.github.io/afdko/OpenTypeFeatureFileSpecification.html
     lookups = f"""
 ## Lookups are executed in the order they are listed below, regardless of the
 ## order they are referenced in the feature rules that follow.
 
 lookup CAPTURE {{
+    # Dont' replace glyph ranges that look like YYYYMMDD
+    ignore substitute {names['2']} {names['0']} @digits @digits @onezero @digits @onezero @digits;
+
     # capture digits following `.`, but not `..`
     sub {dot_name} {dot_name} @digits' by @capture_L;
     sub {dot_name} @digits' by @capture_R;
@@ -283,6 +287,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
     digit_groups = {
             "digits": [ names[d] for d in DECIMAL_LIST ],
             "xdigits": [ names[d] for d in HEXADECIMAL_LIST ],
+            "onezero": [ names['0'], names['1'] ],
             }
 
     for group, sep, right, digits, anno in [
