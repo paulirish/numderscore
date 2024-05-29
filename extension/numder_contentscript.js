@@ -29,11 +29,11 @@ function injectStyles(file) {
     var el = document.createElement('link');
     el.rel = 'stylesheet'
     el.setAttribute('href', file);
-    document.body.appendChild(el);
+    (document.body ?? document.head).appendChild(el);
 }
 
 function injectScript(file) {
     var el = document.createElement('script');
     el.setAttribute('src', file);
-    document.body.appendChild(el);
+    (document.body ?? document.head).appendChild(el);
 }
