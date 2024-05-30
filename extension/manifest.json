@@ -23,11 +23,17 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "fonts/Roboto-DG.ttf",
-        "fonts/Roboto-Bold-DG.ttf",
+        "numder_style.css",
+        "fonts/Droid-Sans-Mono-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Medium-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Regular-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf",
         "fonts/Roboto-Black-DG.ttf",
         "fonts/Roboto-Black-Italic-DG.ttf",
+        "fonts/Roboto-Bold-DG.ttf",
         "fonts/Roboto-Bold-Italic-DG.ttf",
+        "fonts/Roboto-DG.ttf",
         "fonts/Roboto-Italic-DG.ttf",
         "fonts/Roboto-Light-DG.ttf",
         "fonts/Roboto-Light-Italic-DG.ttf",
@@ -48,10 +54,7 @@
         "fonts/Roboto-Mono-Thin-DG.ttf",
         "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
         "fonts/Roboto-Thin-DG.ttf",
-        "fonts/Roboto-Thin-Italic-DG.ttf",
-        "fonts/Droid-Sans-Mono-DG.ttf",
-        "fonts/Times-New-Roman-DG.ttf",
-        "numder_style.css"
+        "fonts/Roboto-Thin-Italic-DG.ttf"
       ],
       "matches": [
         "*://*/*"
