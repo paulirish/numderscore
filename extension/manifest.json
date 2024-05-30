@@ -7,11 +7,10 @@
     "16": "images/icon-16.png",
     "128": "images/icon-128.png"
   },
-
   "content_scripts": [
     {
       "matches": [
-         "*://*/*"
+        "*://*/*"
       ],
       "js": [
         "numder_contentscript.js"
@@ -21,17 +20,14 @@
       "allframes": true
     }
   ],
-
-  "web_accessible_resources": [{
+  "web_accessible_resources": [
+    {
       "resources": [
-        "numder_injected.js", 
-        "numder_style.css", 
-
+        "fonts/Roboto-DG.ttf",
+        "fonts/Roboto-Bold-DG.ttf",
         "fonts/Roboto-Black-DG.ttf",
         "fonts/Roboto-Black-Italic-DG.ttf",
-        "fonts/Roboto-Bold-DG.ttf",
         "fonts/Roboto-Bold-Italic-DG.ttf",
-        "fonts/Roboto-DG.ttf",
         "fonts/Roboto-Italic-DG.ttf",
         "fonts/Roboto-Light-DG.ttf",
         "fonts/Roboto-Light-Italic-DG.ttf",
@@ -53,8 +49,13 @@
         "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
         "fonts/Roboto-Thin-DG.ttf",
         "fonts/Roboto-Thin-Italic-DG.ttf",
-        "fonts/Droid-Sans-Mono-DG.ttf"
+        "fonts/Droid-Sans-Mono-DG.ttf",
+        "fonts/Times-New-Roman-DG.ttf",
+        "numder_style.css"
       ],
-      "matches": ["*://*/*"]
-   }]
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ]
 }
