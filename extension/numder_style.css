@@ -406,9 +406,15 @@ body {
   font-family: 'Times';
   font-weight: 400;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-DG.ttf');
-  /* mostly figured these out with https://screenspan.net/fallback .. thanks Brian !  there's room to tweak more.. maybe linegap */
-    ascent-override: 78%;
-    descent-override: 19%;
+  /* mostly figured these out with 
+  https://screenspan.net/fallback  thx brian!
+  https://simonhearne.com/2021/layout-shifts-webfonts/#reduce-layout-shift-with-f-mods thx simon (but advance-override is not a thing anymore!)
+  https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte 
+  */
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%; /* okay this one i did myself by effing with malte's tool */
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -429,8 +435,10 @@ body {
   font-weight: 400;
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -449,8 +457,10 @@ body {
 @font-face {
   font-family: 'Times';
   src: url('fonts/Nimbus-Roman-No9-L-Medium-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   font-weight: 700;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
@@ -472,8 +482,10 @@ body {
   font-weight: 700;
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -493,8 +505,10 @@ body {
   font-family: 'Times New Roman';
   font-weight: 400;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -515,8 +529,10 @@ body {
   font-weight: 400;
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -535,8 +551,10 @@ body {
 @font-face {
   font-family: 'Times New Roman';
   src: url('fonts/Nimbus-Roman-No9-L-Medium-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   font-weight: 700;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
@@ -558,8 +576,10 @@ body {
   font-weight: 700;
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf');
-      ascent-override: 78%;
-    descent-override: 19%;
+  ascent-override: 82%;
+  descent-override: 18%;
+  line-gap-override: 15%;
+  size-adjust: 100.48%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
