@@ -10,7 +10,8 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*/*"
+        "*://*/*",
+        "devtools://*/*"
       ],
       "js": [
         "numder_contentscript.js"
