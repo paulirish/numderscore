@@ -9,11 +9,23 @@ injectStyles( chrome.runtime.getURL('numder_style.css'), 'body');
 //  Note: Roboto Mono is definitely different than the system monospace font.
 function replaceMonospaceFont() {
   for (const styleSheet of document.styleSheets) {
+
+    if (styleSheet?.href.includes('numder_style.css')) continue;
+
     try {
       for (const rule of styleSheet.cssRules) {
-        if (rule.style && rule.style.fontFamily === 'monospace') {
-          // Found a rule with 'monospace', replace it
-          rule.style.fontFamily = '"Roboto Mono", "Thanks Numderscore", monospace'; 
+
+        // https://drafts.csswg.org/css-fonts-4/#generic-font-families can't have quotes around them. But the matching is case insensitive.
+        if (rule.style?.fontFamily) {
+          // Exclude anything with a quote, so we're mostly with just generic families.
+          const families = rule.style?.fontFamily.split(',');
+          const monospaceIndex = families.findIndex(f => f.toLowerCase().trim() === 'monospace');
+          if (monospaceIndex >= 0) {
+            // We found a rule with 'monospace', replace it
+            // The Roboto Mono has the digits, but need 'monospace' as fallback for the letter glyphs, because we use unicode-range.
+            families.splice(monospaceIndex, 1, ['"Roboto Mono"', '"Thanks Numderscore"', 'monospace']);
+            rule.style.fontFamily = families.join(',');
+          }
         }
       }
     } catch (err) {

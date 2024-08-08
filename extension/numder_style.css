@@ -222,10 +222,10 @@
   font-family: 'Times';
   font-weight: 400;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-DG.ttf');
-  /* mostly figured these out with 
-  https://screenspan.net/fallback  thx brian!
-  https://simonhearne.com/2021/layout-shifts-webfonts/#reduce-layout-shift-with-f-mods thx simon (but advance-override is not a thing anymore!)
-  https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte 
+  /* mostly figured these out with: 
+     - https://screenspan.net/fallback  thx brian!
+     - https://simonhearne.com/2021/layout-shifts-webfonts/#reduce-layout-shift-with-f-mods thx simon (but advance-override is not a thing anymore!)
+     - https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte 
   */
   ascent-override: 82%;
   descent-override: 18%;

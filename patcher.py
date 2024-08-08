@@ -34,7 +34,8 @@ class deferred_map:
     def __getitem__(self, i):
         return self._f(self._sequence[ord(i) if isinstance(i, str) else i])
 
-def gen_feature(names, digit_groups, monospace, feature_name):
+def gen_feature(names, digit_groups, monospace, force_feature):
+    feature_spaces = 'dgsp'
     feature_commas = 'dgco'
     feature_underscores = 'dgun'
     feature_dots = 'dgdo'
@@ -119,13 +120,23 @@ lookup REFLOW_DIGITS {{
 }} REFLOW_DIGITS;
 """
 
+# TODO: build this calt feature dynamically based on arg.
     features = f"""
-feature {feature_name} {{
+feature calt {{
     lookup CAPTURE;
     lookup GROUP_DIGITS;
     lookup GROUP_DECIMALS;
     lookup REFLOW_DIGITS;
-}} {feature_name};
+    sub @group_L' by @group_L_underscore;
+    sub @group_R' by @group_R_underscore;
+}} calt;
+
+feature {feature_spaces} {{
+    lookup CAPTURE;
+    lookup GROUP_DIGITS;
+    lookup GROUP_DECIMALS;
+    lookup REFLOW_DIGITS;
+}} {feature_spaces};
 
 feature {feature_commas} {{
     lookup CAPTURE;
@@ -222,9 +233,9 @@ def annotate_glyph(glyph, font, annotation):
     glyph.addReference(annotation, mat)
 
 def out_path(name):
-    return f'out/{name}.ttf'
+    return f'out/{name.replace(" ", "-")}.ttf'
 
-def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish, squishy, squish_all, debug_annotate):
+def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish, squishy, squish_all, debug_annotate):
     font.encoding = 'ISO10646'
     print('😊 Patching', font.fullname)
     names = deferred_map(lambda o: o.glyphname, font)
@@ -354,7 +365,7 @@ def patch_one_font(font, rename_font, feature_name, monospace, gap_size, squish,
             glyph = font[digit]
             glyph.layers[1] = squish_layer(glyph.layers[1], squish, squishy)
 
-    gen_feature(names, digit_groups, monospace, feature_name)
+    gen_feature(names, digit_groups, monospace, force_feature)
 
     font.generate('out/tmp.ttf')
     ft_font = TTFont('out/tmp.ttf')
@@ -401,9 +412,9 @@ def main(argv):
     parser.add_argument('--no-rename',
                         help='don\'t add " with Numderline" to the font name',
                         default=True, action='store_false', dest='rename_font')
-    parser.add_argument('--feature-name',
-                        help='feature name to use to enable ligation, try "calt" for always-on',
-                        type=str, default="dgsp")
+    parser.add_argument('--force-feature',
+                        help='By default this is false, and which feature you want is determined at runtime with `font-feature-settings`. But providing this will force this feature on (eg "dgsp" or "dgun"), at build-time, for all uses of this font.',
+                        type=str, default=False)
     parser.add_argument('--monospace',
                         help='ACTUALLY this is done automatically if the input font is determined to be monospace. When true: squish all numbers, including decimals and ones less than 4 digits, use with --squish flag',
                         default=False, action='store_true')
