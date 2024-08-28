@@ -143,7 +143,7 @@ feature {feature_underscores} {{
 feature {feature_comma_decimals} {{
     lookup CAPTURE;
     lookup GROUP_DIGITS;
-    #lookup GROUP_DECIMALS;
+    lookup GROUP_DECIMALS;
     lookup REFLOW_DIGITS;
     sub @group_L' by @group_L_comma;
     sub @group_R' by @group_R_comma;
