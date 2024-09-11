@@ -1,5 +1,5 @@
-/* add Numderscore patched fonts to every page. Only redefines the fonts named in `font-family` below. 
-   https://github.com/paulirish/numderspace/ , https://github.com/sh1boot/numderline , https://thume.ca/numderline/, 
+/* add Numderscore patched fonts to every page. Only redefines the fonts named in `font-family` below.
+   https://github.com/paulirish/numderspace/ , https://github.com/sh1boot/numderline , https://thume.ca/numderline/,
  */
 
 /* Generally with numderscore defaults you gotta turn on the features.. but it's enabled by default for these extension font builds. So we skip this
@@ -407,15 +407,34 @@
   font-family: 'Times';
   font-weight: 400;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-DG.ttf');
-  /* mostly figured these out with:
-     - https://screenspan.net/fallback  thx brian!
+  /* Font metric Overrides!  Fun. Good resources:
+     - https://www.debugbear.com/blog/web-font-layout-shift#adjusting-font-metrics
      - https://simonhearne.com/2021/layout-shifts-webfonts/#reduce-layout-shift-with-f-mods thx simon (but advance-override is not a thing anymore!)
+     - https://screenspan.net/fallback  thx brian!
      - https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte
+
+     Use fontdrop and get metrics. Divide ascender, descender, linegap numbers by 1000. multiply times 100%.
+        If you use those numbers on the same font, nothing changes.. you've overriden back to the defined values.
+     You generally want to have the webfont get override tweaks so it adapts to the native font metrics (but maybe not!). 
+     Anyhow, assuming the webfont adapts....
+        You'll get the metrics from the fallback native font, calculate overrides, and then apply those to the webfont's @font-face rule.
+        I use malte's page to test but I tweak it more.
+
+    These values primarily match my Mac's `Times New Roman` but not its 'Times'. Other OS's prob have diff baseline Times as their `serif`, so.... some smarter approach is likely needed.
   */
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%; /* okay this one i did myself by effing with malte's tool */
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;;
+  /* Also needs `letter-spacing: 0.041px;` applied to the text elements. This value I can't really explain from the metrics.   */
+
+  /* Also fwiw to get Local TNR looking like NImbus i did these:
+    @font-face {
+      font-family: 'LocalTimes'; src: local('Times New Roman');
+      ascent-override: 68.3%; descent-override: 31.70%; line-gap-override: 20.00%;
+    }
+    .fallback { letter-spacing: -0.026px; }
+  */
+
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -434,12 +453,12 @@
 @font-face {
   font-family: 'Times';
   font-weight: 400;
+
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -456,12 +475,12 @@
 }
 
 @font-face {
+
   font-family: 'Times';
   src: url('fonts/Nimbus-Roman-No9-L-Medium-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   font-weight: 700;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
@@ -481,12 +500,12 @@
 @font-face {
   font-family: 'Times';
   font-weight: 700;
+
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -504,12 +523,12 @@
 
 @font-face {
   font-family: 'Times New Roman';
+
   font-weight: 400;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -528,12 +547,12 @@
 @font-face {
   font-family: 'Times New Roman';
   font-weight: 400;
+
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
@@ -550,12 +569,12 @@
 }
 
 @font-face {
+
   font-family: 'Times New Roman';
   src: url('fonts/Nimbus-Roman-No9-L-Medium-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   font-weight: 700;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
@@ -575,12 +594,12 @@
 @font-face {
   font-family: 'Times New Roman';
   font-weight: 700;
+
   font-style: italic;
   src: url('fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf');
-  ascent-override: 82%;
-  descent-override: 18%;
-  line-gap-override: 15%;
-  size-adjust: 100.48%;
+  ascent-override: 89.1113%;
+  descent-override: 21.6309%;
+  line-gap-override: 4.2480%;
   unicode-range: U+0020-007E, U+00A0-017F, U+0192, U+01FA-01FF, U+0218-021B, U+02C6-02C7, U+02C9, U+02D8-02DD,
     U+0384-038A, U+038C, U+038E-03A1, U+03A3-03CE, U+03D1, U+03D5-03D6, U+0400-045F, U+0462-0463, U+0472-0475,
     U+0490-0493, U+0496-0497, U+049A-049D, U+04A2-04A3, U+04AE-04B3, U+04B6-04BB, U+04C0, U+04CF, U+04D8-04D9,
