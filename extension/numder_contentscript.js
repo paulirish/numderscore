@@ -32,7 +32,7 @@ function replaceMonospaceFont() {
 }
 
 window.addEventListener('load', _ => setTimeout(replaceMonospaceFont, 50));
-// And later as there's plenty of lazy stuff. TODO: upgrade to a smarter mutationobserver something.
+// And later as there's plenty of lazy stuff. TODO: upgrade to a smarter mutationobserver something.. Like the one in numder_devtools.js
 window.addEventListener('load', _ => setTimeout(replaceMonospaceFont, 1_000));
 
 function injectStyles(file) {
