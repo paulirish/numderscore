@@ -412,6 +412,7 @@
      - https://simonhearne.com/2021/layout-shifts-webfonts/#reduce-layout-shift-with-f-mods thx simon (but advance-override is not a thing anymore!)
      - https://screenspan.net/fallback  thx brian!
      - https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte
+     - https://developer.chrome.com/blog/font-fallbacks thx katie
 
      Use fontdrop and get metrics. Divide ascender, descender, linegap numbers by 1000. multiply times 100%.
         If you use those numbers on the same font, nothing changes.. you've overriden back to the defined values.
