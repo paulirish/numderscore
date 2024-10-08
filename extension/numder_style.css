@@ -414,13 +414,17 @@
      - https://deploy-preview-15--upbeat-shirley-608546.netlify.app/perfect-ish-font-fallback/ thx malte
      - https://developer.chrome.com/blog/font-fallbacks thx katie
 
-     Use fontdrop and get metrics. Divide ascender, descender, linegap numbers by 1000. multiply times 100%.
-        If you use those numbers on the same font, nothing changes.. you've overriden back to the defined values.
-     You generally want to have the webfont get override tweaks so it adapts to the native font metrics (but maybe not!). 
-     Anyhow, assuming the webfont adapts....
-        You'll get the metrics from the fallback native font, calculate overrides, and then apply those to the webfont's @font-face rule.
-        I use malte's page to test but I tweak it more.
+     Use fontdrop on and get metrics. Divide ascender, descender, linegap numbers by unitsPerEm. then turn into percentage with X 100%.
+        https://developer.chrome.com/blog/font-fallbacks#calculating_font_metric_overrides
 
+        If you use those numbers on the same font, nothing changes.. you've overriden back to the defined values.
+     You generally want to have the FALLBACK/system font get override tweaks so it adapts to the webfont metrics. This is cuz fallbacks change per system but the webfont is reliable.
+
+     So get metrics from the webfont, calculate overrides, and then apply those to a @font-face rule that references the system via local(). You only need to get 1 font's metrics. (its not like you divide one by the other)
+
+
+    That said.. i did this kinda "backwards" applying overrides to the webfont... 
+    TODO: figure out if its possible to do it the 'right way'.
     These values primarily match my Mac's `Times New Roman` but not its 'Times'. Other OS's prob have diff baseline Times as their `serif`, so.... some smarter approach is likely needed.
   */
   ascent-override: 89.1113%;
