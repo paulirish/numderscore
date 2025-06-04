@@ -11,7 +11,7 @@ function replaceMonospaceFont() {
 
     try {
       for (const rule of styleSheet.cssRules) {
-        if (rule.styleMap.has('font-family')) {
+        if (rule.styleMap?.has('font-family')) {
           const families = rule.style?.fontFamily.split(',');
           // https://drafts.csswg.org/css-fonts-4/#generic-font-families can't have quotes around them. But the matching is case insensitive.
           const monospaceIndex = families.findIndex(f => f.toLowerCase().trim() === 'monospace');
