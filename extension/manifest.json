@@ -15,7 +15,9 @@
       "js": [
         "numder_contentscript.js"
       ],
-      "css": [],
+      "css": [
+         "numder_style.css"
+      ],
       "run_at": "document_end",
       "allframes": true
     }
@@ -53,6 +55,7 @@
         "fonts/Roboto-Mono-SemiBold-Italic-DG.ttf",
         "fonts/Roboto-Mono-Thin-DG.ttf",
         "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
+        "fonts/Roboto-Condensed-Light-DG.ttf",
         "fonts/Roboto-Thin-DG.ttf",
         "fonts/Roboto-Thin-Italic-DG.ttf"
       ],
