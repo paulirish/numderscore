@@ -16,12 +16,19 @@ function replaceMonospaceFont() {
           // https://drafts.csswg.org/css-fonts-4/#generic-font-families can't have quotes around them. But the matching is case insensitive.
           const monospaceIndex = families.findIndex(f => f.toLowerCase().trim() === 'monospace');
           if (monospaceIndex >= 0) {
+            // The 'Thanks' family is just a signal that we mutated it.
             // Weirdly looks like CSSOM inserts a space on its own. Huh. But anyway we don't want to edit it again.
             if (families.includes(' "Thanks Numderscore"') || families.includes('"Thanks Numderscore"')) continue;
-            // We found a rule with 'monospace', replace it
-            // The Roboto Mono has the digits, but need 'monospace' as fallback for the letter glyphs, because we use unicode-range.
-            families.splice(monospaceIndex, 1, ['"Roboto Mono"', '"Thanks Numderscore"', 'monospace']);
-            rule.style.fontFamily = families.join(',');
+            // We found a rule with `monospace`, replace it
+            // The Roboto Mono has the digits, but need `monospace`` as fallback for the letter glyphs, because we use unicode-range.
+            families.splice(monospaceIndex, 1, [`"Roboto Mono"`, `"Thanks Numderscore"`, `monospace`]);
+            // https://neugierig.org/software/chromium/notes/2009/09/monospace-fonts-workaround.html
+            rule.style.fontFamily = [`"DontMakeMonospaceExtraTall"`, ...families].join(',');
+
+            // Extra hack for Google code search as it sets 'font-size: intial' which screws up everything
+            if (rule.styleMap.get('font-size')?.value === 'initial') {
+              rule.style.fontSize = '';
+            }
           }
         }
       }
@@ -30,7 +37,6 @@ function replaceMonospaceFont() {
     }
   }
 }
-
 window.addEventListener('load', _ => setTimeout(replaceMonospaceFont, 50));
 // And later as there's plenty of lazy stuff. TODO: upgrade to a smarter mutationobserver something.. Like the one in numder_devtools.js
 window.addEventListener('load', _ => setTimeout(replaceMonospaceFont, 1_000));
