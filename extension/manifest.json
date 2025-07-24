@@ -15,9 +15,6 @@
       "js": [
         "numder_contentscript.js"
       ],
-      "css": [
-         "numder_style.css"
-      ],
       "run_at": "document_end",
       "allframes": true
     }

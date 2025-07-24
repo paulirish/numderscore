@@ -1,4 +1,6 @@
 /* add Numderscore patched fonts to every page. Only redefines the fonts named in `font-family` below.
+   This needs to be injected from content script. if injected by manifest's content_scripts block, the font paths don't resolve correctly.
+
    https://github.com/paulirish/numderspace/ , https://github.com/sh1boot/numderline , https://thume.ca/numderline/,
  */
 
