@@ -32,6 +32,7 @@
         "fonts/Roboto-Black-Italic-DG.ttf",
         "fonts/Roboto-Bold-DG.ttf",
         "fonts/Roboto-Bold-Italic-DG.ttf",
+        "fonts/Roboto-Condensed-Light-DG.ttf",
         "fonts/Roboto-DG.ttf",
         "fonts/Roboto-Italic-DG.ttf",
         "fonts/Roboto-Light-DG.ttf",
@@ -52,7 +53,6 @@
         "fonts/Roboto-Mono-SemiBold-Italic-DG.ttf",
         "fonts/Roboto-Mono-Thin-DG.ttf",
         "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
-        "fonts/Roboto-Condensed-Light-DG.ttf",
         "fonts/Roboto-Thin-DG.ttf",
         "fonts/Roboto-Thin-Italic-DG.ttf"
       ],
