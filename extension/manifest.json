@@ -1,0 +1,64 @@
+{
+  "name": "Numderscore",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "description": "Hijack fonts with your modified numderscore versions",
+  "icons": {
+    "16": "images/icon-16.png",
+    "128": "images/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*/*"
+      ],
+      "js": [
+        "numder_contentscript.js"
+      ],
+      "run_at": "document_end",
+      "allframes": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "numder_style.css",
+        "fonts/Droid-Sans-Mono-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Medium-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Medium-Italic-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Regular-DG.ttf",
+        "fonts/Nimbus-Roman-No9-L-Regular-Italic-DG.ttf",
+        "fonts/Roboto-Black-DG.ttf",
+        "fonts/Roboto-Black-Italic-DG.ttf",
+        "fonts/Roboto-Bold-DG.ttf",
+        "fonts/Roboto-Bold-Italic-DG.ttf",
+        "fonts/Roboto-DG.ttf",
+        "fonts/Roboto-Italic-DG.ttf",
+        "fonts/Roboto-Light-DG.ttf",
+        "fonts/Roboto-Light-Italic-DG.ttf",
+        "fonts/Roboto-Medium-DG.ttf",
+        "fonts/Roboto-Medium-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Bold-DG.ttf",
+        "fonts/Roboto-Mono-Bold-Italic-DG.ttf",
+        "fonts/Roboto-Mono-ExtraLight-DG.ttf",
+        "fonts/Roboto-Mono-ExtraLight-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Light-DG.ttf",
+        "fonts/Roboto-Mono-Light-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Medium-DG.ttf",
+        "fonts/Roboto-Mono-Medium-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Regular-DG.ttf",
+        "fonts/Roboto-Mono-SemiBold-DG.ttf",
+        "fonts/Roboto-Mono-SemiBold-Italic-DG.ttf",
+        "fonts/Roboto-Mono-Thin-DG.ttf",
+        "fonts/Roboto-Mono-Thin-Italic-DG.ttf",
+        "fonts/Roboto-Condensed-Light-DG.ttf",
+        "fonts/Roboto-Thin-DG.ttf",
+        "fonts/Roboto-Thin-Italic-DG.ttf"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ]
+}
