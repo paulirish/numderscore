@@ -2,7 +2,7 @@ const opentype = require('opentype.js');
 const fs = require('fs');
 
 const fontPathOrig = 'out/Times-New-Roman.ttf';
-const fontPathPatched = 'out/Times-New-Roman-DG.ttf';
+const fontPathPatched = process.argv[2] || 'out/Times-New-Roman-DG.ttf';
 
 function loadFont(path) {
     const buffer = fs.readFileSync(path);
