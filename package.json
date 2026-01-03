@@ -1,0 +1,24 @@
+{
+  "name": "numderscore",
+  "version": "1.0.0",
+  "description": "Allows the rendering of digit grouping (thousand separators) in contexts where you have some control over the font but don't want to (or can't) edit the text inline.  It looks a bit like this:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulirish/numderspace.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/paulirish/numderspace/issues"
+  },
+  "homepage": "https://github.com/paulirish/numderspace#readme",
+  "devDependencies": {
+    "opentype.js": "^1.3.4"
+  }
+}
