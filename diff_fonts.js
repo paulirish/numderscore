@@ -38,12 +38,14 @@ try {
             lookup.subtables.forEach((sub, subIdx) => {
                 let coverage = [];
                 if (sub.coverage) {
-                    if (sub.coverage.glyphs) coverage = sub.coverage.glyphs;
-                    else if (Array.isArray(sub.coverage)) coverage = sub.coverage;
-                    else if (typeof sub.coverage === 'object') {
-                        // Some versions of opentype.js might have a different structure
-                        // console.log('Coverage keys:', Object.keys(sub.coverage));
-                        coverage = sub.coverage.glyphs || [];
+                    if (sub.coverage.glyphs) {
+                        coverage = sub.coverage.glyphs;
+                    } else if (sub.coverage.ranges) {
+                        sub.coverage.ranges.forEach(r => {
+                            for (let id = r.start; id <= r.end; id++) coverage.push(id);
+                        });
+                    } else if (Array.isArray(sub.coverage)) {
+                        coverage = sub.coverage;
                     }
                 }
 
@@ -62,7 +64,7 @@ try {
                     }
                     if (coverage.length > 10) console.log(`  ... and ${coverage.length - 10} more`);
                 } else if (lookup.lookupType === 5) { // Contextual Substitution
-                    console.log(`  Contextual subtable with ${sub.sets ? sub.sets.length : 0} sets`);
+                    console.log(`  Contextual subtable (Format ${sub.substFormat})`);
                 }
             });
         }
@@ -72,8 +74,7 @@ try {
     console.log('\n--- Name Table Changes ---');
     const n1 = fontOrig.names;
     const n2 = fontPatched.names;
-    const importantNames = ['fontFamily', 'fullName', 'postScriptName'];
-    importantNames.forEach(key => {
+    for (const key in n2) {
         const v1 = JSON.stringify(n1[key]);
         const v2 = JSON.stringify(n2[key]);
         if (v1 !== v2) {
@@ -81,7 +82,7 @@ try {
             console.log(`  Original: ${v1}`);
             console.log(`  Patched:  ${v2}`);
         }
-    });
+    }
 
 } catch (err) {
     console.log('Error:', err);
