@@ -9,77 +9,80 @@ function loadFont(path) {
     return opentype.parse(buffer.buffer);
 }
 
-function compareObjects(obj1, obj2, path = '') {
-    const keys1 = Object.keys(obj1 || {});
-    const keys2 = Object.keys(obj2 || {});
-    const allKeys = new Set([...keys1, ...keys2]);
-
-    for (const key of allKeys) {
-        const currentPath = path ? `${path}.${key}` : key;
-        const val1 = obj1 ? obj1[key] : undefined;
-        const val2 = obj2 ? obj2[key] : undefined;
-
-        if (typeof val1 === 'object' && val1 !== null && typeof val2 === 'object' && val2 !== null) {
-            compareObjects(val1, val2, currentPath);
-        } else if (val1 !== val2) {
-            console.log(`Difference at ${currentPath}:`);
-            console.log(`  Original: ${JSON.stringify(val1)}`);
-            console.log(`  Patched:  ${JSON.stringify(val2)}`);
-        }
-    }
-}
-
 try {
     const fontOrig = loadFont(fontPathOrig);
     const fontPatched = loadFont(fontPathPatched);
 
-    console.log(`Comparing tables for:\n  ${fontPathOrig}\n  ${fontPathPatched}\n`);
+    console.log(`Comparing fonts:\n  Orig:    ${fontPathOrig}\n  Patched: ${fontPathPatched}\n`);
 
-    const tableKeysOrig = Object.keys(fontOrig.tables);
-    const tableKeysPatched = Object.keys(fontPatched.tables);
+    const g1 = fontOrig.tables.gsub;
+    const g2 = fontPatched.tables.gsub;
 
-    const addedTables = tableKeysPatched.filter(k => !tableKeysOrig.includes(k));
-    const removedTables = tableKeysOrig.filter(k => !tableKeysPatched.includes(k));
-    const commonTables = tableKeysOrig.filter(k => tableKeysPatched.includes(k));
-
-    if (addedTables.length) console.log('Added tables:', addedTables);
-    if (removedTables.length) console.log('Removed tables:', removedTables);
-
-    for (const tableName of commonTables) {
-        const t1 = fontOrig.tables[tableName];
-        const t2 = fontPatched.tables[tableName];
-
-        // Skip binary data or large blobs if they are too noisy, 
-        // but for now let's just see what we get.
-        // opentype.js often parses these into nice objects.
+    if (g2) {
+        const f1Tags = (g1.features || []).map(f => f.tag);
+        const f2Tags = (g2.features || []).map(f => f.tag);
+        const newFeatures = f2Tags.filter(t => !f1Tags.includes(t));
         
-        // We might want to specially handle GSUB as that's where the magic is
-        if (tableName === 'gsub') {
-            console.log('\n--- GSUB Table Differences ---');
-            // GSUB can be very deep, let's look at features
-            const f1 = t1.features || [];
-            const f2 = t2.features || [];
+        console.log('--- GSUB Features ---');
+        console.log('Added Features:', newFeatures.join(', '));
+
+        const l1Count = (g1.lookups || []).length;
+        const l2 = g2.lookups || [];
+        
+        console.log(`\n--- Lookups (Original: ${l1Count}, Patched: ${l2.length}) ---`);
+        
+        for (let i = l1Count; i < l2.length; i++) {
+            const lookup = l2[i];
+            console.log(`\nLookup ${i} (Type ${lookup.lookupType}):`);
             
-            const f1Tags = f1.map(f => f.tag);
-            const f2Tags = f2.map(f => f.tag);
-            
-            const addedFeatures = f2Tags.filter(t => !f1Tags.includes(t));
-            console.log('Added GSUB features:', addedFeatures);
-            
-            // Log details of added features
-            addedFeatures.forEach(tag => {
-                const feature = f2.find(f => f.tag === tag);
-                console.log(`Feature ${tag}:`, JSON.stringify(feature, null, 2));
+            lookup.subtables.forEach((sub, subIdx) => {
+                let coverage = [];
+                if (sub.coverage) {
+                    if (sub.coverage.glyphs) coverage = sub.coverage.glyphs;
+                    else if (Array.isArray(sub.coverage)) coverage = sub.coverage;
+                    else if (typeof sub.coverage === 'object') {
+                        // Some versions of opentype.js might have a different structure
+                        // console.log('Coverage keys:', Object.keys(sub.coverage));
+                        coverage = sub.coverage.glyphs || [];
+                    }
+                }
+
+                if (lookup.lookupType === 1) { // Single Substitution
+                    for (let g = 0; g < Math.min(coverage.length, 10); g++) {
+                        const origId = coverage[g];
+                        let subId;
+                        if (sub.substFormat === 1) {
+                            subId = origId + sub.deltaGlyphId;
+                        } else {
+                            subId = sub.substitute[g];
+                        }
+                        const origGlyph = fontPatched.glyphs.get(origId);
+                        const subGlyph = fontPatched.glyphs.get(subId);
+                        console.log(`  ${origGlyph ? origGlyph.name : origId} -> ${subGlyph ? subGlyph.name : subId}`);
+                    }
+                    if (coverage.length > 10) console.log(`  ... and ${coverage.length - 10} more`);
+                } else if (lookup.lookupType === 5) { // Contextual Substitution
+                    console.log(`  Contextual subtable with ${sub.sets ? sub.sets.length : 0} sets`);
+                }
             });
-        } else if (tableName === 'name') {
-            // Check for name changes (family name, etc.)
-            const n1 = t1;
-            const n2 = t2;
-            // opentype.js parses 'name' table into an object where keys are often language IDs or property names
-            // but it depends on the version. Let's just compare them.
         }
     }
 
+    // Name table
+    console.log('\n--- Name Table Changes ---');
+    const n1 = fontOrig.names;
+    const n2 = fontPatched.names;
+    const importantNames = ['fontFamily', 'fullName', 'postScriptName'];
+    importantNames.forEach(key => {
+        const v1 = JSON.stringify(n1[key]);
+        const v2 = JSON.stringify(n2[key]);
+        if (v1 !== v2) {
+            console.log(`${key}:`);
+            console.log(`  Original: ${v1}`);
+            console.log(`  Patched:  ${v2}`);
+        }
+    });
+
 } catch (err) {
-    console.error('Error comparing fonts:', err);
+    console.log('Error:', err);
 }
