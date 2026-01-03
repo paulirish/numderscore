@@ -91,7 +91,6 @@ async function main() {
 
         const newGlyph = new opentype.Glyph({
             name: `capture_L_d${d}`,
-            unicode: -1,
             advanceWidth: origGlyph.advanceWidth,
             path: newPath
         });
@@ -113,7 +112,6 @@ async function main() {
 
         const newGlyph = new opentype.Glyph({
             name: `group_L_d${d}`,
-            unicode: -1,
             advanceWidth: origGlyph.advanceWidth + commaGlyph.advanceWidth
         });
 
@@ -177,9 +175,11 @@ async function main() {
             },
             backtrackCoverage: [
                 { format: 1, glyphs: captureLIndices },
+                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
             lookaheadCoverage: [
+                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
