@@ -1,63 +1,6 @@
 const fs = require('fs');
-const path = require('path');
-
-// --- Patch opentype.js to support GSUB Type 8 ---
-// Since opentype.js does not support writing GSUB Type 8, we monkey-patch it.
-// We load the module source, inject the patch, and eval/compile it.
-
-let opentype;
-try {
-    const opentypePath = require.resolve('opentype.js');
-    let opentypeSource = fs.readFileSync(opentypePath, 'utf8');
-
-    if (!opentypeSource.includes('subtableMakers[8] = function')) {
-        console.log('Patching opentype.js to support GSUB Type 8...');
-        // We insert the Type 8 maker before makeGsubTable definition
-        const anchor = 'function makeGsubTable(gsub) {';
-        const patchCode = `
-	subtableMakers[8] = function makeLookup8(subtable) {
-	    check.assert(subtable.substFormat === 1, 'Lookup type 8 substFormat must be 1.');
-        return new table.Table('reverseChainContextSingleSubstTable', [
-            {name: 'substFormat', type: 'USHORT', value: 1},
-            {name: 'coverage', type: 'TABLE', value: new table.Coverage(subtable.coverage)}
-        ].concat(table.tableList('backtrackCoverage', subtable.backtrackCoverage, function(coverage) {
-             return new table.Coverage(coverage);
-        }))
-        .concat(table.tableList('lookaheadCoverage', subtable.lookaheadCoverage, function(coverage) {
-             return new table.Coverage(coverage);
-        }))
-        .concat(table.ushortList('substitute', subtable.substitutes)));
-    };
-`;
-        if (opentypeSource.includes(anchor)) {
-            opentypeSource = opentypeSource.replace(anchor, patchCode + '\n' + anchor);
-
-            // We can overwrite the file or load from string.
-            // Overwriting ensures subsequent requires work, but might be unsafe in some envs.
-            // Loading from string is safer.
-            const Module = require('module');
-            const m = new Module(opentypePath, module.parent);
-            m.filename = opentypePath;
-            m.paths = Module._nodeModulePaths(path.dirname(opentypePath));
-            m._compile(opentypeSource, opentypePath);
-            opentype = m.exports;
-
-        } else {
-            console.warn('Could not find injection point in opentype.js. Type 8 lookup writing might fail.');
-            opentype = require('opentype.js');
-        }
-    } else {
-        opentype = require('opentype.js');
-    }
-} catch (e) {
-    console.warn('Failed to patch opentype.js:', e);
-    try {
-        opentype = require('opentype.js');
-    } catch (e2) {
-        console.error('Could not load opentype.js. Make sure it is installed.');
-        process.exit(1);
-    }
-}
+// Using vendored opentype.js with Type 8 support patched in
+const opentype = require('./lib/opentype-patched.js');
 
 const fontPath = 'out/Times-New-Roman.ttf';
 const outPath = 'out/Times-New-Roman-JS.ttf';
@@ -91,7 +34,6 @@ async function main() {
 
         const newGlyph = new opentype.Glyph({
             name: `capture_L_d${d}`,
-            unicode: -1,
             advanceWidth: origGlyph.advanceWidth,
             path: newPath
         });
@@ -113,7 +55,6 @@ async function main() {
 
         const newGlyph = new opentype.Glyph({
             name: `group_L_d${d}`,
-            unicode: -1,
             advanceWidth: origGlyph.advanceWidth + commaGlyph.advanceWidth
         });
 
@@ -177,9 +118,11 @@ async function main() {
             },
             backtrackCoverage: [
                 { format: 1, glyphs: captureLIndices },
+                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
             lookaheadCoverage: [
+                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
