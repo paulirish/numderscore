@@ -2,11 +2,15 @@ const fs = require('fs');
 // Using vendored opentype.js with Type 8 support patched in
 const opentype = require('./lib/opentype-patched.js');
 
-const fontPath = 'out/Times-New-Roman.ttf';
+const fontPath = 'out/Times-New-Roman-orig.ttf';
 const outPath = 'out/Times-New-Roman-JS.ttf';
 
 async function main() {
     console.log(`Loading ${fontPath}...`);
+    if (!fs.existsSync(fontPath)) {
+        console.error(`File not found: ${fontPath}`);
+        return;
+    }
     const buffer = fs.readFileSync(fontPath);
     const font = opentype.parse(buffer.buffer);
 
@@ -27,22 +31,23 @@ async function main() {
 
         // Clone path
         const newPath = new opentype.Path();
-        newPath.commands = JSON.parse(JSON.stringify(origGlyph.path.commands));
-        newPath.fill = origGlyph.path.fill;
-        newPath.stroke = origGlyph.path.stroke;
-        newPath.strokeWidth = origGlyph.path.strokeWidth;
+        if (origGlyph.path) {
+            newPath.commands = JSON.parse(JSON.stringify(origGlyph.path.commands));
+            newPath.fill = origGlyph.path.fill;
+            newPath.stroke = origGlyph.path.stroke;
+            newPath.strokeWidth = origGlyph.path.strokeWidth;
+        }
 
         const newGlyph = new opentype.Glyph({
             name: `capture_L_d${d}`,
             advanceWidth: origGlyph.advanceWidth,
-            path: newPath
+            path: newPath,
+            unicode: undefined // Internal use
         });
 
-        // Add to glyph set directly
         const newIdx = font.glyphs.length;
         font.glyphs.glyphs[newIdx] = newGlyph;
         font.glyphs.length++;
-
         captureLIndices.push(newIdx);
     });
     console.log('Created capture_L glyphs:', captureLIndices);
@@ -55,9 +60,12 @@ async function main() {
 
         const newGlyph = new opentype.Glyph({
             name: `group_L_d${d}`,
-            advanceWidth: origGlyph.advanceWidth + commaGlyph.advanceWidth
+            advanceWidth: origGlyph.advanceWidth + commaGlyph.advanceWidth,
+            unicode: undefined
         });
 
+        // Some environments prefer paths over components in glyf
+        // But components are more efficient.
         newGlyph.components = [
             { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 },
             { glyphIndex: commaIndex, dx: origGlyph.advanceWidth, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
@@ -88,41 +96,31 @@ async function main() {
         return gsub.lookups.length - 1;
     }
 
-    // Lookup: CAPTURE (Type 1: Single Substitution)
+    // Lookup 0: CAPTURE (Type 1: Single Substitution)
     // sub @digits by @capture_L
     const lookupCaptureIdx = addLookup({
         lookupType: 1,
         lookupFlag: 0,
         subtables: [{
-            substFormat: 2, // Format 2: Coverage + GlyphIDs
-            coverage: {
-                format: 1,
-                glyphs: digitIndices
-            },
+            substFormat: 2,
+            coverage: { format: 1, glyphs: digitIndices },
             substitute: captureLIndices
         }]
     });
 
-    // Lookup: GROUP_DIGITS (Type 8: Reverse Chaining Contextual Single Substitution)
+    // Lookup 1: GROUP_DIGITS (Type 8: Reverse Chaining Contextual Single Substitution)
     // rsub @capture_L @capture_L @capture_L' @capture_L @capture_L by @group_L
-    // Backtrack (Right): capture_L, capture_L
-    // Lookahead (Left): capture_L, capture_L
     const lookupGroupIdx = addLookup({
         lookupType: 8,
         lookupFlag: 0,
         subtables: [{
             substFormat: 1,
-            coverage: {
-                format: 1,
-                glyphs: captureLIndices
-            },
+            coverage: { format: 1, glyphs: captureLIndices },
             backtrackCoverage: [
-                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
             lookaheadCoverage: [
-                { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices },
                 { format: 1, glyphs: captureLIndices }
             ],
@@ -130,50 +128,71 @@ async function main() {
         }]
     });
 
-    // Feature: calt
-    const featureCalt = {
-        tag: 'calt',
-        feature: {
-            featureParams: 0,
-            lookupListIndexes: [lookupCaptureIdx, lookupGroupIdx]
+    // Lookup 2: REFLOW (Type 1: Single Substitution)
+    // sub @capture_L by @digits
+    const lookupReflowIdx = addLookup({
+        lookupType: 1,
+        lookupFlag: 0,
+        subtables: [{
+            substFormat: 2,
+            coverage: { format: 1, glyphs: captureLIndices },
+            substitute: digitIndices
+        }]
+    });
+
+    // Feature: calt and friends
+    const featureTags = ['calt', 'dgcd', 'dgco', 'dgdd', 'dgdo', 'dgsp', 'dgun'];
+    
+    featureTags.forEach(tag => {
+        let feat = gsub.features.find(f => f.tag === tag);
+        if (!feat) {
+            feat = {
+                tag: tag,
+                feature: { featureParams: 0, lookupListIndexes: [] }
+            };
+            gsub.features.push(feat);
         }
-    };
+        feat.feature.lookupListIndexes = [lookupCaptureIdx, lookupGroupIdx, lookupReflowIdx];
+    });
 
-    const featureCaltIdx = gsub.features.length;
-    gsub.features.push(featureCalt);
+    console.log(`Configured features [${featureTags.join(', ')}] with lookups [${[lookupCaptureIdx, lookupGroupIdx, lookupReflowIdx].join(', ')}]`);
 
-    console.log(`Added calt feature (idx ${featureCaltIdx}) pointing to lookups [${lookupCaptureIdx}, ${lookupGroupIdx}]`);
+    // Ensure all scripts use these features
+    const featureIndices = featureTags.map(tag => gsub.features.findIndex(f => f.tag === tag));
 
-    // Add feature to all scripts
-    if (gsub.scripts) {
-        gsub.scripts.forEach(script => {
-            const scriptTable = script.script;
-            if (scriptTable) {
-                // Ensure featureIndices exist
-                if (scriptTable.defaultLangSys) {
-                     if (!scriptTable.defaultLangSys.featureIndices) {
-                         scriptTable.defaultLangSys.featureIndices = [];
-                     }
-                    scriptTable.defaultLangSys.featureIndices.push(featureCaltIdx);
-                }
-                if (scriptTable.langSysRecords) {
-                    scriptTable.langSysRecords.forEach(l => {
-                        if (!l.langSys.featureIndices) {
-                            l.langSys.featureIndices = [];
-                        }
-                        l.langSys.featureIndices.push(featureCaltIdx);
+    if (gsub.scripts.length === 0) {
+        // Add a default script if none exists
+        gsub.scripts.push({
+            tag: 'DFLT',
+            script: {
+                defaultLangSys: { reqFeatureIndex: 65535, featureIndices: featureIndices },
+                langSysRecords: []
+            }
+        });
+    } else {
+        gsub.scripts.forEach(s => {
+            const ls = s.script.defaultLangSys;
+            if (ls) {
+                if (!ls.featureIndices) ls.featureIndices = [];
+                featureIndices.forEach(idx => {
+                    if (!ls.featureIndices.includes(idx)) ls.featureIndices.push(idx);
+                });
+            }
+            if (s.script.langSysRecords) {
+                s.script.langSysRecords.forEach(r => {
+                    if (!r.langSys.featureIndices) r.langSys.featureIndices = [];
+                    featureIndices.forEach(idx => {
+                        if (!r.langSys.featureIndices.includes(idx)) r.langSys.featureIndices.push(idx);
                     });
-                }
+                });
             }
         });
     }
 
     // 5. Save
     console.log(`Saving to ${outPath}...`);
-    // Ensure _push dummy exists to avoid potential internal errors if any
-    if (!font._push) {
-        font._push = function() {};
-    }
+    // Workaround for potential opentype.js issues with manually added glyphs
+    if (!font._push) font._push = function() {};
 
     const outBuffer = font.toArrayBuffer();
     fs.writeFileSync(outPath, Buffer.from(outBuffer));

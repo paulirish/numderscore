@@ -115,10 +115,10 @@ function printLookup(font, lookup, index) {
             }
         } else if (lookup.lookupType === 8) {
              console.log(`    (Reverse Chain Contextual Substitution)`);
-             const backtrack = sub.backtrackCoverages || [];
-             const lookahead = sub.lookaheadCoverages || [];
+             const backtrack = sub.backtrackCoverage || sub.backtrackCoverages || [];
+             const lookahead = sub.lookaheadCoverage || sub.lookaheadCoverages || [];
              const input = sub.coverage;
-             const substitutes = sub.substitute || [];
+             const substitutes = sub.substitute || sub.substitutes || [];
 
              if (backtrack.length) console.log(`    Backtrack: ${backtrack.map(c => getGlyphNames(font, c)).join(' | ')}`);
              console.log(`    Input:     ${getGlyphNames(font, input)}`);
