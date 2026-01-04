@@ -4,7 +4,7 @@
     <style type="text/css" id="font-style">
       @font-face {
         font-family: "myFont";
-        src: url("./out/latest.ttf");
+        src: url("./out/xxx.ttf");
       }
     </style>
     <style type="text/css">
@@ -386,6 +386,7 @@ time                       system      flow_type   latency_ns  epoch            
         await document.fonts.load('40px "myFont"');
         runCanvasTest();
       });
+      document.querySelector('#font-src').dispatchEvent(new Event('change'))
 
       // Canvas test
       async function runCanvasTest() {

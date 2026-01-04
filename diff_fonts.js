@@ -42,7 +42,6 @@ const NAME_IDS = {
 };
 
 function getGlyphName(font, id) {
-    // Check if index is within bounds before calling font.glyphs.get
     if (id < 0 || id >= font.glyphs.length) return `ID:${id}(OUT_OF_BOUNDS)`;
     const glyph = font.glyphs.get(id);
     if (glyph && glyph.name) return glyph.name;
@@ -239,6 +238,21 @@ try {
         if (changes === 0) console.log('No changes detected in name table records.');
     } else {
         console.log('Could not retrieve name tables.');
+    }
+
+    // HMTX comparison
+    console.log('\n--- Advance Widths ---');
+    console.log(`Orig glyphs: ${fontOrig.glyphs.length}, Patched glyphs: ${fontPatched.glyphs.length}`);
+    const addedGlyphs = [];
+    for (let i = fontOrig.glyphs.length; i < fontPatched.glyphs.length; i++) {
+        addedGlyphs.push(i);
+    }
+    if (addedGlyphs.length > 0) {
+        console.log(`Widths of added glyphs (first 20):`);
+        addedGlyphs.slice(0, 20).forEach(id => {
+            const glyph = fontPatched.glyphs.get(id);
+            console.log(`  ${getGlyphName(fontPatched, id)}: ${glyph ? glyph.advanceWidth : 'N/A'}`);
+        });
     }
 
 } catch (err) {
