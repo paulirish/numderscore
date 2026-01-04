@@ -1,8 +1,8 @@
 const opentype = require('opentype.js');
 const fs = require('fs');
 
-const fontPathOrig = 'out/Times-New-Roman.ttf';
-const fontPathPatched = 'out/Times-New-Roman-DG.ttf';
+const fontPathOrig = 'out/Times-New-Roman-orig.ttf';
+const fontPathPatched = process.argv[2] || 'out/Times-New-Roman-DG.ttf';
 
 function loadFont(path) {
     const buffer = fs.readFileSync(path);
@@ -49,10 +49,10 @@ try {
     if (g2) {
         const f1Tags = (g1.features || []).map(f => f.tag);
         const f2Tags = (g2.features || []).map(f => f.tag);
-        
+
         console.log('--- GSUB Features ---');
         console.log('Original features:', f1Tags.join(', ') || '(none)');
-        
+
         const caltInOrig = f1Tags.includes('calt');
         console.log(`Original has 'calt' feature: ${caltInOrig}`);
 
@@ -61,13 +61,13 @@ try {
 
         const l1Count = (g1.lookups || []).length;
         const l2 = g2.lookups || [];
-        
+
         console.log(`\n--- New Lookups (Original: ${l1Count}, Patched: ${l2.length}) ---`);
-        
+
         for (let i = l1Count; i < l2.length; i++) {
             const lookup = l2[i];
             console.log(`\nLookup ${i} (Type ${lookup.lookupType}):`);
-            
+
             lookup.subtables.forEach((sub, subIdx) => {
                 if (lookup.lookupType === 5 || lookup.lookupType === 6) {
                     const getGlyphNames = (coverage) => {
@@ -79,7 +79,7 @@ try {
                                 for (let id = r.start; id <= r.end; id++) ids.push(id);
                             });
                         } else if (Array.isArray(coverage)) ids = coverage;
-                        
+
                         const names = ids.slice(0, 5).map(id => fontPatched.glyphs.get(id).name);
                         return `[${names.join(', ')}${ids.length > 5 ? '...' : ''}]`;
                     };
@@ -93,7 +93,7 @@ try {
                         if (backtrack.length) console.log(`    Backtrack: ${backtrack.map(getGlyphNames).join(' | ')}`);
                         console.log(`    Input:     ${input.map(getGlyphNames).join(' | ')}`);
                         if (lookahead.length) console.log(`    Lookahead: ${lookahead.map(getGlyphNames).join(' | ')}`);
-                        
+
                         records.forEach(r => {
                             console.log(`      @ index ${r.sequenceIndex}: apply Lookup ${r.lookupListIndex}`);
                         });
@@ -133,7 +133,7 @@ try {
 
         const map1 = new Map();
         records1.forEach(r => map1.set(recordToKey(r), r));
-        
+
         const map2 = new Map();
         records2.forEach(r => map2.set(recordToKey(r), r));
 
@@ -151,7 +151,7 @@ try {
                 changes++;
                 const [plat, enc, lang, nameID] = key.split('-');
                 const nameLabel = NAME_IDS[nameID] || nameID;
-                
+
                 console.log(`Record [Plat:${plat} Enc:${enc} Lang:${lang} NameID:${nameID} (${nameLabel})]`);
                 if (v1 === undefined) console.log(`  Added: "${v2}"`);
                 else if (v2 === undefined) console.log(`  Removed: "${v1}"`);

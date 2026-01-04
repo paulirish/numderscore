@@ -35,11 +35,7 @@ class deferred_map:
         return self._f(self._sequence[ord(i) if isinstance(i, str) else i])
 
 def gen_feature(names, digit_groups, monospace, force_feature):
-    feature_spaces = 'dgsp'
-    feature_commas = 'dgco'
     feature_underscores = 'dgun'
-    feature_dots = 'dgdo'
-    feature_comma_decimals = 'dgcd'
     feature_dot_decimals = 'dgdd'
 
     dot_name = names['.']
@@ -88,10 +84,6 @@ lookup CAPTURE {{
     sub @digits' by @capture_L;
 }} CAPTURE;
 
-lookup DOTS_TO_COMMAS {{
-    # YIKES!!
-    sub @capture_L {dot_name}' @capture_R by {comma_name};
-}} DOTS_TO_COMMAS;
 
 lookup GROUP_DIGITS {{
     rsub @capture_L @capture_L @capture_L' @capture_L @capture_L by @group_L;
@@ -130,58 +122,6 @@ feature calt {{
     sub @group_L' by @group_L_underscore;
     sub @group_R' by @group_R_underscore;
 }} calt;
-
-feature {feature_spaces} {{
-    lookup CAPTURE;
-    lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-}} {feature_spaces};
-
-feature {feature_commas} {{
-    lookup CAPTURE;
-    lookup GROUP_DIGITS;
-    #lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_comma;
-}} {feature_commas};
-
-feature {feature_underscores} {{
-    lookup CAPTURE;
-    lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_underscore;
-    sub @group_R' by @group_R_underscore;
-}} {feature_underscores};
-
-feature {feature_comma_decimals} {{
-    lookup CAPTURE;
-    lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_comma;
-    sub @group_R' by @group_R_comma;
-}} {feature_comma_decimals};
-
-feature {feature_dots} {{
-    lookup CAPTURE;
-    lookup DOTS_TO_COMMAS;
-    lookup GROUP_DIGITS;
-    #lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_dot;
-}} {feature_dots};
-
-feature {feature_dot_decimals} {{
-    lookup CAPTURE;
-    lookup DOTS_TO_COMMAS;
-    lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
-    lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_dot;
-    sub @group_R' by @group_R_dot;
-}} {feature_dot_decimals};
 """
     wholefile = '\n'.join([ preamble, setup, lookups, features ])
     with open('mods.fea', 'w') as f:
@@ -211,7 +151,7 @@ def insert_separator(glyph, font, separator, gap_size, monospace):
 
     if separator == 'underscore':
         # Calculate y_shift to position underscore slightly below baseline
-        height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1] 
+        height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1]
         underscore_ymax = font[separator].boundingBox()[3]
         y_shift = -(height_of_x / 10) - underscore_ymax
 
@@ -304,10 +244,6 @@ def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish
     for group, sep, right, digits, anno in [
             ( 'xgroup_L',      ' ', False, HEXADECIMAL_LIST, '<' ),
             ( 'group_R',       ' ',  True, DECIMAL_LIST,     '>' ),
-            ( 'group_L_dot',   '.', False, DECIMAL_LIST,     '[' ),
-            ( 'group_R_dot',   '.',  True, DECIMAL_LIST,     ']' ),
-            ( 'group_L_comma', ',', False, DECIMAL_LIST,     '(' ),
-            ( 'group_R_comma', ',',  True, DECIMAL_LIST,     ')' ),
             ( 'group_L_underscore', '_', False, DECIMAL_LIST,     '{' ),
             ( 'group_R_underscore', '_',  True, DECIMAL_LIST,     '}' ),
             ]:
