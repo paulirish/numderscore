@@ -1,46 +1,13 @@
 <html>
   <head>
     <title>Numderline Test</title>
-    <style type="text/css">
+    <style type="text/css" id="font-style">
       @font-face {
         font-family: "myFont";
-        /* src: url("./out/tmp.ttf"); */
         src: url("./out/latest.ttf");
-        src: url("./out/Times-New-Roman-DG.ttf");
-        /* src: url("./out/Times-New-Roman.ttf"); */
-        /* src: url("./RobotoDG Medium.ttf"); */
-
-
-
-        /*src: url("out/Sauce Code Pro with Numderline.ttf");*/
-        /*src: url("out/Sauce Code Pro with NGroup.ttf");*/
-        /*src: url("out/Sauce Code Pro with NSub.ttf");*/
-        /*src: url("out/Sauce Code Pro Light with NSub.ttf");*/
-        /*src: url("out/Hack Regular with Numderline.ttf");*/
-        /*src: url("out/Hack Regular with NGroup.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with Numderline.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NShift80.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NShift100Squish0p85.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NShift100Squish0p85AllDebug.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NDebug.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NDebugNoDecimals.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NonoCommasShift100Squish0p85All.ttf");*/
-        /*src: url("out/DejaVu Sans Mono with NGroup.ttf");*/
-        /*src: url("out/DejaVu Sans with Nommas.ttf");*/
-        /*src: url("out/DejaVu Sans with Numderline.ttf");*/
-        /*src: url("out/Fira Code Regular with Numderline.ttf");*/
-        /*src: url("out/FiraCodeWithNumderline-Regular.ttf");*/
-        /*src: url("out/Monoid Regular with Numderline.ttf");*/
-        /*src: url("out/Monoid Regular with NGroup.ttf");*/
-        /*src: url("out/Roboto Mono Nerd Font Complete with NGroup.ttf");*/
-        /*src: url("out/Ubuntu Mono with Numderline.ttf");*/
-        /*src: url("out/Ubuntu Mono with NGroup.ttf");*/
-        /*src: url("fonts/monoid/Monoid-Regular.ttf");*/
-        /*src: url("fonts/firacode/FiraCode-Regular.ttf");*/
-        /*src: url("Monoid Regular with Numderline.otf");*/
-        /*src: url("out/merged.ttf");*/
       }
-
+    </style>
+    <style type="text/css">
       .font-test {
         font-family: "myFont";
       }
@@ -126,9 +93,23 @@
         filter: drop-shadow(1px 1px 2px #afafaf);
       }
     </style>
-  </head>
-  <div>
-    <textarea class="font-test">
+  <body>
+    <div style="padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ccc; display: flex; gap: 10px; align-items: center;">
+      <label for="font-src">Font Source:</label>
+      <select id="font-src">
+        <option value="./out/Times-New-Roman.ttf">./out/Times-New-Roman.ttf</option>
+        <option value="./out/Times-New-Roman-DG.ttf" selected>./out/Times-New-Roman-DG.ttf</option>
+        <option value="./out/Times-New-Roman-JS.ttf">./out/Times-New-Roman-JS.ttf</option>
+        <option value="./out/tmp.ttf">./out/tmp.ttf</option>
+        <option value="./out/latest.ttf">./out/latest.ttf</option>
+        <option value="./RobotoDG Medium.ttf">./RobotoDG Medium.ttf</option>
+      </select>
+    </div>
+
+    <div id="canvas-test-container" style="padding: 10px; border-bottom: 1px solid #ccc;"></div>
+
+    <div>
+      <textarea class="font-test">
 the quick brown fox jumps over the lazy dog
 20240519
 1234567890 123
@@ -395,8 +376,23 @@ time                       system      flow_type   latency_ns  epoch            
       });
       document.querySelector('#choice').dispatchEvent(new Event('change'));
 
+      // Handle font source change
+      const fontStyle = document.querySelector('#font-style');
+      document.querySelector('#font-src').addEventListener('change', async e => {
+        const newSrc = e.target.value;
+        fontStyle.innerHTML = `@font-face { font-family: "myFont"; src: url("${newSrc}"); }`;
+
+        // Wait for the specific font to be loaded
+        await document.fonts.load('40px "myFont"');
+        runCanvasTest();
+      });
+
       // Canvas test
       async function runCanvasTest() {
+        const container = document.getElementById('canvas-test-container');
+        // Clear previous results
+        container.innerHTML = '';
+
         await document.fonts.ready;
         const canvas = document.createElement('canvas');
         canvas.width = 600;
@@ -417,9 +413,9 @@ time                       system      flow_type   latency_ns  epoch            
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillText(text, x, y);
 
-        document.body.appendChild(canvas);
+        container.appendChild(canvas);
         const testResults = document.createElement('pre');
-        document.body.appendChild(testResults);
+        container.appendChild(testResults);
 
         // Pixel analysis to find glyph boundaries
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
