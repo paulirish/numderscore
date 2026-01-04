@@ -5,6 +5,10 @@ const fontPathOrig = 'out/Times-New-Roman-orig.ttf';
 const fontPathPatched = process.argv[2] || 'out/Times-New-Roman-DG.ttf';
 
 function loadFont(path) {
+    if (!fs.existsSync(path)) {
+        console.error(`File not found: ${path}`);
+        process.exit(1);
+    }
     const buffer = fs.readFileSync(path);
     return opentype.parse(buffer.buffer);
 }
@@ -37,85 +41,156 @@ const NAME_IDS = {
     25: 'variationsPostScriptNamePrefix'
 };
 
+function getGlyphName(font, id) {
+    // Check if index is within bounds before calling font.glyphs.get
+    if (id < 0 || id >= font.glyphs.length) return `ID:${id}(OUT_OF_BOUNDS)`;
+    const glyph = font.glyphs.get(id);
+    if (glyph && glyph.name) return glyph.name;
+    return `ID:${id}`;
+}
+
+function getGlyphNames(font, coverage) {
+    if (!coverage) return 'none';
+    let ids = [];
+    if (coverage.glyphs) ids = coverage.glyphs;
+    else if (coverage.ranges) {
+        coverage.ranges.forEach(r => {
+            for (let id = r.start; id <= r.end; id++) ids.push(id);
+        });
+    } else if (Array.isArray(coverage)) ids = coverage;
+    
+    if (ids.length === 0) return '[]';
+
+    const names = ids.slice(0, 8).map(id => getGlyphName(font, id));
+    return `[${names.join(', ')}${ids.length > 8 ? '...' : ''}]`;
+}
+
+function printLookup(font, lookup, index) {
+    console.log(`\nLookup ${index} (Type ${lookup.lookupType}):`);
+    
+    lookup.subtables.forEach((sub, subIdx) => {
+        if (lookup.lookupType === 5 || lookup.lookupType === 6) {
+            const backtrack = sub.backtrackCoverages || [];
+            const input = sub.coverages || [];
+            const lookahead = sub.lookaheadCoverages || [];
+            const records = sub.lookupRecords || [];
+
+            if (sub.substFormat === 3) {
+                if (backtrack.length) console.log(`    Backtrack: ${backtrack.map(c => getGlyphNames(font, c)).join(' | ')}`);
+                console.log(`    Input:     ${input.map(c => getGlyphNames(font, c)).join(' | ')}`);
+                if (lookahead.length) console.log(`    Lookahead: ${lookahead.map(c => getGlyphNames(font, c)).join(' | ')}`);
+                
+                records.forEach(r => {
+                    console.log(`      @ index ${r.sequenceIndex}: apply Lookup ${r.lookupListIndex}`);
+                });
+            } else if (sub.substFormat === 1 || sub.substFormat === 2) {
+                console.log(`    (Contextual Subtable Format ${sub.substFormat})`);
+                if (sub.coverage) console.log(`    Coverage: ${getGlyphNames(font, sub.coverage)}`);
+                if (records.length) {
+                    records.forEach(r => {
+                        console.log(`      @ index ${r.sequenceIndex}: apply Lookup ${r.lookupListIndex}`);
+                    });
+                }
+            }
+        } else if (lookup.lookupType === 1) {
+            let coverage = [];
+            if (sub.coverage) {
+                if (sub.coverage.glyphs) coverage = sub.coverage.glyphs;
+                else if (sub.coverage.ranges) {
+                    sub.coverage.ranges.forEach(r => {
+                        for (let id = r.start; id <= r.end; id++) coverage.push(id);
+                    });
+                }
+            }
+            if (coverage.length > 0) {
+                const firstId = coverage[0];
+                const firstSubId = sub.substFormat === 1 ? firstId + (sub.deltaGlyphId || 0) : (sub.substitute ? sub.substitute[0] : firstId);
+                console.log(`  Single Sub: [${getGlyphName(font, firstId)}...] -> [${getGlyphName(font, firstSubId)}...] (${coverage.length} glyphs)`);
+                for (let g = 0; g < Math.min(coverage.length, 5); g++) {
+                    const id = coverage[g];
+                    const sid = sub.substFormat === 1 ? id + (sub.deltaGlyphId || 0) : (sub.substitute ? sub.substitute[g] : id);
+                    console.log(`    ${getGlyphName(font, id)} -> ${getGlyphName(font, sid)}`);
+                }
+                if (coverage.length > 5) console.log('    ...');
+            }
+        } else if (lookup.lookupType === 8) {
+             console.log(`    (Reverse Chain Contextual Substitution)`);
+             const backtrack = sub.backtrackCoverages || [];
+             const lookahead = sub.lookaheadCoverages || [];
+             const input = sub.coverage;
+             const substitutes = sub.substitute || [];
+
+             if (backtrack.length) console.log(`    Backtrack: ${backtrack.map(c => getGlyphNames(font, c)).join(' | ')}`);
+             console.log(`    Input:     ${getGlyphNames(font, input)}`);
+             if (lookahead.length) console.log(`    Lookahead: ${lookahead.map(c => getGlyphNames(font, c)).join(' | ')}`);
+             if (substitutes.length > 0) {
+                 console.log(`    Substitutes: ${substitutes.slice(0, 5).map(id => getGlyphName(font, id)).join(', ')}${substitutes.length > 5 ? '...' : ''}`);
+             }
+        } else {
+            console.log(`    (Lookup Type ${lookup.lookupType} not fully detailed)`);
+        }
+    });
+}
+
 try {
     const fontOrig = loadFont(fontPathOrig);
     const fontPatched = loadFont(fontPathPatched);
 
     console.log(`Comparing fonts:\n  Orig:    ${fontPathOrig}\n  Patched: ${fontPathPatched}\n`);
 
-    const g1 = fontOrig.tables.gsub;
-    const g2 = fontPatched.tables.gsub;
+    const g1 = fontOrig.tables.gsub || { features: [], lookups: [] };
+    const g2 = fontPatched.tables.gsub || { features: [], lookups: [] };
 
-    if (g2) {
-        const f1Tags = (g1.features || []).map(f => f.tag);
-        const f2Tags = (g2.features || []).map(f => f.tag);
+    const f1Tags = (g1.features || []).map(f => f.tag);
+    const f2Tags = (g2.features || []).map(f => f.tag);
+    
+    console.log('--- GSUB Features ---');
+    console.log('Original features:', f1Tags.join(', ') || '(none)');
+    
+    const caltInOrig = f1Tags.includes('calt');
+    console.log(`Original has 'calt' feature: ${caltInOrig}`);
 
-        console.log('--- GSUB Features ---');
-        console.log('Original features:', f1Tags.join(', ') || '(none)');
+    const newFeatures = f2Tags.filter(t => !f1Tags.includes(t));
+    console.log('Added Features:', newFeatures.join(', '));
 
-        const caltInOrig = f1Tags.includes('calt');
-        console.log(`Original has 'calt' feature: ${caltInOrig}`);
-
-        const newFeatures = f2Tags.filter(t => !f1Tags.includes(t));
-        console.log('Added Features:', newFeatures.join(', '));
-
-        const l1Count = (g1.lookups || []).length;
-        const l2 = g2.lookups || [];
-
-        console.log(`\n--- New Lookups (Original: ${l1Count}, Patched: ${l2.length}) ---`);
-
-        for (let i = l1Count; i < l2.length; i++) {
-            const lookup = l2[i];
-            console.log(`\nLookup ${i} (Type ${lookup.lookupType}):`);
-
-            lookup.subtables.forEach((sub, subIdx) => {
-                if (lookup.lookupType === 5 || lookup.lookupType === 6) {
-                    const getGlyphNames = (coverage) => {
-                        if (!coverage) return 'none';
-                        let ids = [];
-                        if (coverage.glyphs) ids = coverage.glyphs;
-                        else if (coverage.ranges) {
-                            coverage.ranges.forEach(r => {
-                                for (let id = r.start; id <= r.end; id++) ids.push(id);
-                            });
-                        } else if (Array.isArray(coverage)) ids = coverage;
-
-                        const names = ids.slice(0, 5).map(id => fontPatched.glyphs.get(id).name);
-                        return `[${names.join(', ')}${ids.length > 5 ? '...' : ''}]`;
-                    };
-
-                    if (sub.substFormat === 3) {
-                        const backtrack = sub.backtrackCoverages || [];
-                        const input = sub.coverages || [];
-                        const lookahead = sub.lookaheadCoverages || [];
-                        const records = sub.lookupRecords || [];
-
-                        if (backtrack.length) console.log(`    Backtrack: ${backtrack.map(getGlyphNames).join(' | ')}`);
-                        console.log(`    Input:     ${input.map(getGlyphNames).join(' | ')}`);
-                        if (lookahead.length) console.log(`    Lookahead: ${lookahead.map(getGlyphNames).join(' | ')}`);
-
-                        records.forEach(r => {
-                            console.log(`      @ index ${r.sequenceIndex}: apply Lookup ${r.lookupListIndex}`);
-                        });
-                    } else {
-                        console.log(`    (Contextual Subtable Format ${sub.substFormat})`);
-                    }
-                } else if (lookup.lookupType === 1) {
-                    let coverage = [];
-                    if (sub.coverage) {
-                        if (sub.coverage.glyphs) coverage = sub.coverage.glyphs;
-                        else if (sub.coverage.ranges) {
-                            sub.coverage.ranges.forEach(r => {
-                                for (let id = r.start; id <= r.end; id++) coverage.push(id);
+    const l1 = g1.lookups || [];
+    const l2 = g2.lookups || [];
+    
+    console.log(`\n--- Lookups associated with added features in Patched Font ---`);
+    
+    const addedFeatures = g2.features.filter(f => newFeatures.includes(f.tag));
+    const addedLookupIndices = new Set();
+    addedFeatures.forEach(f => {
+        if (f.feature && f.feature.lookupListIndexes) {
+            f.feature.lookupListIndexes.forEach(idx => {
+                addedLookupIndices.add(idx);
+                // Also follow dependencies
+                const follow = (i) => {
+                    const l = l2[i];
+                    if (!l) return;
+                    l.subtables.forEach(s => {
+                        if (s.lookupRecords) {
+                            s.lookupRecords.forEach(r => {
+                                if (!addedLookupIndices.has(r.lookupListIndex)) {
+                                    addedLookupIndices.add(r.lookupListIndex);
+                                    follow(r.lookupListIndex);
+                                }
                             });
                         }
-                    }
-                    const firstId = coverage[0];
-                    const firstSubId = sub.substFormat === 1 ? firstId + (sub.deltaGlyphId || 0) : sub.substitute[0];
-                    console.log(`  Single Sub: [${fontPatched.glyphs.get(firstId).name}...] -> [${fontPatched.glyphs.get(firstSubId).name}...] (${coverage.length} glyphs)`);
-                }
+                    });
+                };
+                follow(idx);
             });
         }
+    });
+
+    if (addedLookupIndices.size > 0) {
+        [...addedLookupIndices].sort((a,b) => a-b).forEach(idx => {
+            if (l2[idx]) printLookup(fontPatched, l2[idx], idx);
+        });
+    } else {
+        console.log('No lookups found for added features. Showing all lookups in patched font instead:');
+        l2.forEach((l, idx) => printLookup(fontPatched, l, idx));
     }
 
     // Name table comparison
@@ -133,7 +208,7 @@ try {
 
         const map1 = new Map();
         records1.forEach(r => map1.set(recordToKey(r), r));
-
+        
         const map2 = new Map();
         records2.forEach(r => map2.set(recordToKey(r), r));
 
@@ -151,7 +226,7 @@ try {
                 changes++;
                 const [plat, enc, lang, nameID] = key.split('-');
                 const nameLabel = NAME_IDS[nameID] || nameID;
-
+                
                 console.log(`Record [Plat:${plat} Enc:${enc} Lang:${lang} NameID:${nameID} (${nameLabel})]`);
                 if (v1 === undefined) console.log(`  Added: "${v2}"`);
                 else if (v2 === undefined) console.log(`  Removed: "${v1}"`);
@@ -168,4 +243,5 @@ try {
 
 } catch (err) {
     console.log('Error:', err);
+    console.error(err.stack);
 }

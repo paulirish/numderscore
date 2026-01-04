@@ -1,0 +1,75 @@
+languagesystem DFLT dflt;
+languagesystem latn dflt;
+languagesystem cyrl dflt;
+languagesystem grek dflt;
+languagesystem kana dflt;
+
+@digits=[zero one two three four five six seven eight nine];
+@xdigits=[zero one two three four five six seven eight nine a b c d e f A B C D E F];
+@onezero=[zero one];
+@xgroup_L=[xgroup_L_d0 xgroup_L_d1 xgroup_L_d2 xgroup_L_d3 xgroup_L_d4 xgroup_L_d5 xgroup_L_d6 xgroup_L_d7 xgroup_L_d8 xgroup_L_d9 xgroup_L_d10 xgroup_L_d11 xgroup_L_d12 xgroup_L_d13 xgroup_L_d14 xgroup_L_d15 xgroup_L_d16 xgroup_L_d17 xgroup_L_d18 xgroup_L_d19 xgroup_L_d20 xgroup_L_d21];
+@group_L=[xgroup_L_d0 xgroup_L_d1 xgroup_L_d2 xgroup_L_d3 xgroup_L_d4 xgroup_L_d5 xgroup_L_d6 xgroup_L_d7 xgroup_L_d8 xgroup_L_d9];
+@group_R=[group_R_d0 group_R_d1 group_R_d2 group_R_d3 group_R_d4 group_R_d5 group_R_d6 group_R_d7 group_R_d8 group_R_d9];
+@group_L_underscore=[group_L_underscore_d0 group_L_underscore_d1 group_L_underscore_d2 group_L_underscore_d3 group_L_underscore_d4 group_L_underscore_d5 group_L_underscore_d6 group_L_underscore_d7 group_L_underscore_d8 group_L_underscore_d9];
+@group_R_underscore=[group_R_underscore_d0 group_R_underscore_d1 group_R_underscore_d2 group_R_underscore_d3 group_R_underscore_d4 group_R_underscore_d5 group_R_underscore_d6 group_R_underscore_d7 group_R_underscore_d8 group_R_underscore_d9];
+@xcapture_L=[xcapture_L_d0 xcapture_L_d1 xcapture_L_d2 xcapture_L_d3 xcapture_L_d4 xcapture_L_d5 xcapture_L_d6 xcapture_L_d7 xcapture_L_d8 xcapture_L_d9 xcapture_L_d10 xcapture_L_d11 xcapture_L_d12 xcapture_L_d13 xcapture_L_d14 xcapture_L_d15 xcapture_L_d16 xcapture_L_d17 xcapture_L_d18 xcapture_L_d19 xcapture_L_d20 xcapture_L_d21];
+@capture_L=[capture_L_d0 capture_L_d1 capture_L_d2 capture_L_d3 capture_L_d4 capture_L_d5 capture_L_d6 capture_L_d7 capture_L_d8 capture_L_d9];
+@capture_R=[capture_R_d0 capture_R_d1 capture_R_d2 capture_R_d3 capture_R_d4 capture_R_d5 capture_R_d6 capture_R_d7 capture_R_d8 capture_R_d9];
+
+
+## Lookups are executed in the order they are listed below, regardless of the
+## order they are referenced in the feature rules that follow.
+
+lookup CAPTURE {
+    # Dont' replace glyph ranges that look like YYYYMMDD
+    ignore substitute two zero @digits @digits @onezero @digits @onezero @digits;
+
+    # capture digits following `.`, but not `..`
+    sub period period @digits' by @capture_L;
+    sub period @digits' by @capture_R;
+    sub @capture_R @digits' by @capture_R;
+
+    # capture hex digits following 0x
+    sub [zero capture_L_d0] [x X] @xdigits' by @xcapture_L;
+    sub @xcapture_L @xdigits' by @xcapture_L;
+
+    # capture digits that didn't match above
+    sub @digits' by @capture_L;
+} CAPTURE;
+
+
+lookup GROUP_DIGITS {
+    rsub @capture_L @capture_L @capture_L' @capture_L @capture_L by @group_L;
+    rsub @xcapture_L @xcapture_L' @xcapture_L @xcapture_L @xcapture_L by @xgroup_L;
+} GROUP_DIGITS;
+
+lookup GROUP_DECIMALS {
+    sub [ period comma @group_R ] @capture_R @capture_R @capture_R' @capture_R by @group_R;
+} GROUP_DECIMALS;
+
+lookup REFLOW_DIGITS {
+    # sub @group_L @capture_L' by @phase1_L;
+    # sub @phase1_L @capture_L' by @phase2_L;
+    # sub @phase2_L @capture_L' by @phase3_L;
+
+    # sub @xgroup_L @xcapture_L' by @xphase1_L;
+    # sub @xphase1_L @xcapture_L' by @xphase2_L;
+    # sub @xphase2_L @xcapture_L' by @xphase3_L;
+
+    # sub [ @group_R period comma ] @capture_R' @capture_R @group_R by @phase2_R;
+    # sub @phase2_R @capture_R' by @phase1_R;
+
+    sub @capture_L' by @digits;
+    sub @xcapture_L' by @xdigits;
+    sub @capture_R' by @digits;
+} REFLOW_DIGITS;
+
+
+feature calt {
+    lookup CAPTURE;
+    lookup GROUP_DIGITS;
+    lookup GROUP_DECIMALS;
+    lookup REFLOW_DIGITS;
+    sub @group_L' by @group_L_underscore;
+    sub @group_R' by @group_R_underscore;
+} calt;
