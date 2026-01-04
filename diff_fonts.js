@@ -137,6 +137,10 @@ try {
 
     console.log(`Comparing fonts:\n  Orig:    ${fontPathOrig}\n  Patched: ${fontPathPatched}\n`);
 
+    console.log('--- Table Presence ---');
+    console.log('Orig tables:   ', Object.keys(fontOrig.tables).join(', '));
+    console.log('Patched tables:', Object.keys(fontPatched.tables).join(', '));
+
     const g1 = fontOrig.tables.gsub || { features: [], lookups: [] };
     const g2 = fontPatched.tables.gsub || { features: [], lookups: [] };
 
@@ -151,6 +155,19 @@ try {
 
     const newFeatures = f2Tags.filter(t => !f1Tags.includes(t));
     console.log('Added Features:', newFeatures.join(', '));
+
+    console.log('\n--- GSUB Scripts ---');
+    (g2.scripts || []).forEach(s => {
+        const ls = s.script.defaultLangSys;
+        const fIndices = ls ? (ls.featureIndices || ls.featureIndexes || []) : [];
+        const features = fIndices.map(idx => g2.features[idx] ? g2.features[idx].tag : `ID:${idx}`);
+        console.log(`Script '${s.tag}': DefaultLangSys features: [${features.join(', ')}]`);
+        (s.script.langSysRecords || []).forEach(r => {
+             const rfIndices = r.langSys ? (r.langSys.featureIndices || r.langSys.featureIndexes || []) : [];
+             const rFeatures = rfIndices.map(idx => g2.features[idx] ? g2.features[idx].tag : `ID:${idx}`);
+             console.log(`  LangSys '${r.tag}': [${rFeatures.join(', ')}]`);
+        });
+    });
 
     const l1 = g1.lookups || [];
     const l2 = g2.lookups || [];
@@ -248,10 +265,11 @@ try {
         addedGlyphs.push(i);
     }
     if (addedGlyphs.length > 0) {
-        console.log(`Widths of added glyphs (first 20):`);
+        console.log(`Widths and paths of added glyphs (first 20):`);
         addedGlyphs.slice(0, 20).forEach(id => {
             const glyph = fontPatched.glyphs.get(id);
-            console.log(`  ${getGlyphName(fontPatched, id)}: ${glyph ? glyph.advanceWidth : 'N/A'}`);
+            const hasPath = glyph.path && glyph.path.commands && glyph.path.commands.length > 0;
+            console.log(`  ${getGlyphName(fontPatched, id)}: width=${glyph ? glyph.advanceWidth : 'N/A'}, hasPath=${hasPath}`);
         });
     }
 

@@ -19,35 +19,50 @@ async function main() {
     const commaIndex = font.charToGlyphIndex(',');
     const commaGlyph = font.glyphs.get(commaIndex);
 
-    function createGlyph(name, origIdx, widthAdd = 0, hasComma = false) {
+    function createFlattenedGlyph(name, origIdx, widthAdd = 0, hasComma = false) {
         const origGlyph = font.glyphs.get(origIdx);
+        
+        // Start with a clone of the original path
+        const newPath = new opentype.Path();
+        if (origGlyph.path && origGlyph.path.commands) {
+            newPath.commands = JSON.parse(JSON.stringify(origGlyph.path.commands));
+        }
+
+        if (hasComma && commaGlyph.path && commaGlyph.path.commands) {
+            // Offset the comma path to the right of the digit
+            const dx = origGlyph.advanceWidth;
+            const dy = 0;
+            const commaCommands = JSON.parse(JSON.stringify(commaGlyph.path.commands));
+            commaCommands.forEach(cmd => {
+                if ('x' in cmd) cmd.x += dx;
+                if ('y' in cmd) cmd.y += dy;
+                if ('x1' in cmd) cmd.x1 += dx;
+                if ('y1' in cmd) cmd.y1 += dy;
+                if ('x2' in cmd) cmd.x2 += dx;
+                if ('y2' in cmd) cmd.y2 += dy;
+            });
+            newPath.commands.push(...commaCommands);
+        }
+
         const newGlyph = new opentype.Glyph({
             name: name,
             advanceWidth: origGlyph.advanceWidth + widthAdd,
+            path: newPath,
             unicode: undefined
         });
-        if (hasComma) {
-            newGlyph.components = [
-                { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 },
-                { glyphIndex: commaIndex, dx: origGlyph.advanceWidth, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
-            ];
-        } else {
-            newGlyph.components = [
-                { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
-            ];
-        }
+
         const idx = font.glyphs.length;
         font.glyphs.glyphs[idx] = newGlyph;
         font.glyphs.length++;
         return idx;
     }
 
-    const captureLIndices = digits.map(d => createGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
-    const groupLIndices = digits.map(d => createGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth, true));
+    const captureLIndices = digits.map(d => createFlattenedGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
+    const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth, true));
     
     // For propagation
-    const phase1LIndices = digits.map(d => createGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
-    const phase2LIndices = digits.map(d => createGlyph(`phase2_L_d${d}`, font.charToGlyphIndex(d)));
+    const phase1LIndices = digits.map(d => createFlattenedGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
+    const phase2LIndices = digits.map(d => createFlattenedGlyph(`phase2_L_d${d}`, font.charToGlyphIndex(d)));
 
     if (!font.tables.gsub) {
         font.tables.gsub = { version: 1, scripts: [], features: [], lookups: [] };
@@ -59,13 +74,13 @@ async function main() {
         return gsub.lookups.length - 1;
     }
 
-    // Lookup 17: CAPTURE
+    // Lookup 0: CAPTURE
     const lookupCaptureIdx = addLookup({
         lookupType: 1, lookupFlag: 0,
         subtables: [{ substFormat: 2, coverage: { format: 1, glyphs: digitIndices }, substitute: captureLIndices }]
     });
 
-    // Lookup 18: GROUP_DIGITS (Type 8)
+    // Lookup 1: GROUP_DIGITS (Type 8)
     const lookupGroupIdx = addLookup({
         lookupType: 8, lookupFlag: 0,
         subtables: [{
@@ -153,12 +168,22 @@ async function main() {
         const ls = s.script.defaultLangSys;
         if (ls) {
             if (!ls.featureIndices) ls.featureIndices = [];
-            featureIndices.forEach(idx => { if (!ls.featureIndices.includes(idx)) ls.featureIndices.push(idx); });
+            featureIndices.forEach(idx => {
+                if (!ls.featureIndices.includes(idx)) {
+                    ls.featureIndices.push(idx);
+                }
+            });
+            ls.featureIndexes = ls.featureIndices;
         }
         if (s.script.langSysRecords) {
             s.script.langSysRecords.forEach(r => {
                 if (!r.langSys.featureIndices) r.langSys.featureIndices = [];
-                featureIndices.forEach(idx => { if (!r.langSys.featureIndices.includes(idx)) r.langSys.featureIndices.push(idx); });
+                featureIndices.forEach(idx => {
+                    if (!r.langSys.featureIndices.includes(idx)) {
+                        r.langSys.featureIndices.push(idx);
+                    }
+                });
+                r.langSys.featureIndexes = r.langSys.featureIndices;
             });
         }
     });
