@@ -69,9 +69,9 @@ function printLookup(font, lookup, index) {
     
     lookup.subtables.forEach((sub, subIdx) => {
         if (lookup.lookupType === 5 || lookup.lookupType === 6) {
-            const backtrack = sub.backtrackCoverages || [];
-            const input = sub.coverages || [];
-            const lookahead = sub.lookaheadCoverages || [];
+            const backtrack = sub.backtrackCoverage || sub.backtrackCoverages || [];
+            const input = sub.inputCoverage || sub.coverages || [];
+            const lookahead = sub.lookaheadCoverage || sub.lookaheadCoverages || [];
             const records = sub.lookupRecords || [];
 
             if (sub.substFormat === 3) {

@@ -14,105 +14,60 @@ async function main() {
     const buffer = fs.readFileSync(fontPath);
     const font = opentype.parse(buffer.buffer);
 
-    // 1. Identify digits
     const digits = '0123456789'.split('');
     const digitIndices = digits.map(d => font.charToGlyphIndex(d));
     const commaIndex = font.charToGlyphIndex(',');
     const commaGlyph = font.glyphs.get(commaIndex);
 
-    console.log('Digit indices:', digitIndices);
-    console.log('Comma index:', commaIndex);
-
-    // 2. Create capture_L glyphs (copies of digits)
-    const captureLIndices = [];
-    digits.forEach((d, i) => {
-        const origIdx = digitIndices[i];
+    function createGlyph(name, origIdx, widthAdd = 0, hasComma = false) {
         const origGlyph = font.glyphs.get(origIdx);
-
-        // Clone path
-        const newPath = new opentype.Path();
-        if (origGlyph.path) {
-            newPath.commands = JSON.parse(JSON.stringify(origGlyph.path.commands));
-            newPath.fill = origGlyph.path.fill;
-            newPath.stroke = origGlyph.path.stroke;
-            newPath.strokeWidth = origGlyph.path.strokeWidth;
-        }
-
         const newGlyph = new opentype.Glyph({
-            name: `capture_L_d${d}`,
-            advanceWidth: origGlyph.advanceWidth,
-            path: newPath,
-            unicode: undefined // Internal use
-        });
-
-        const newIdx = font.glyphs.length;
-        font.glyphs.glyphs[newIdx] = newGlyph;
-        font.glyphs.length++;
-        captureLIndices.push(newIdx);
-    });
-    console.log('Created capture_L glyphs:', captureLIndices);
-
-    // 3. Create group_L glyphs (composite: digit + comma)
-    const groupLIndices = [];
-    digits.forEach((d, i) => {
-        const origIdx = digitIndices[i];
-        const origGlyph = font.glyphs.get(origIdx);
-
-        const newGlyph = new opentype.Glyph({
-            name: `group_L_d${d}`,
-            advanceWidth: origGlyph.advanceWidth + commaGlyph.advanceWidth,
+            name: name,
+            advanceWidth: origGlyph.advanceWidth + widthAdd,
             unicode: undefined
         });
-
-        // Some environments prefer paths over components in glyf
-        // But components are more efficient.
-        newGlyph.components = [
-            { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 },
-            { glyphIndex: commaIndex, dx: origGlyph.advanceWidth, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
-        ];
-
-        const newIdx = font.glyphs.length;
-        font.glyphs.glyphs[newIdx] = newGlyph;
+        if (hasComma) {
+            newGlyph.components = [
+                { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 },
+                { glyphIndex: commaIndex, dx: origGlyph.advanceWidth, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
+            ];
+        } else {
+            newGlyph.components = [
+                { glyphIndex: origIdx, dx: 0, dy: 0, xScale: 1, yScale: 1, rotation: 0 }
+            ];
+        }
+        const idx = font.glyphs.length;
+        font.glyphs.glyphs[idx] = newGlyph;
         font.glyphs.length++;
+        return idx;
+    }
 
-        groupLIndices.push(newIdx);
-    });
-    console.log('Created group_L glyphs:', groupLIndices);
+    const captureLIndices = digits.map(d => createGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
+    const groupLIndices = digits.map(d => createGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth, true));
+    
+    // For propagation
+    const phase1LIndices = digits.map(d => createGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
+    const phase2LIndices = digits.map(d => createGlyph(`phase2_L_d${d}`, font.charToGlyphIndex(d)));
 
-    // 4. Construct GSUB
     if (!font.tables.gsub) {
-        font.tables.gsub = {
-            version: 1,
-            scripts: [],
-            features: [],
-            lookups: []
-        };
+        font.tables.gsub = { version: 1, scripts: [], features: [], lookups: [] };
     }
     const gsub = font.tables.gsub;
 
-    // Helper to add lookup
     function addLookup(lookup) {
         gsub.lookups.push(lookup);
         return gsub.lookups.length - 1;
     }
 
-    // Lookup 0: CAPTURE (Type 1: Single Substitution)
-    // sub @digits by @capture_L
+    // Lookup 17: CAPTURE
     const lookupCaptureIdx = addLookup({
-        lookupType: 1,
-        lookupFlag: 0,
-        subtables: [{
-            substFormat: 2,
-            coverage: { format: 1, glyphs: digitIndices },
-            substitute: captureLIndices
-        }]
+        lookupType: 1, lookupFlag: 0,
+        subtables: [{ substFormat: 2, coverage: { format: 1, glyphs: digitIndices }, substitute: captureLIndices }]
     });
 
-    // Lookup 1: GROUP_DIGITS (Type 8: Reverse Chaining Contextual Single Substitution)
-    // rsub @capture_L @capture_L @capture_L' @capture_L @capture_L by @group_L
+    // Lookup 18: GROUP_DIGITS (Type 8)
     const lookupGroupIdx = addLookup({
-        lookupType: 8,
-        lookupFlag: 0,
+        lookupType: 8, lookupFlag: 0,
         subtables: [{
             substFormat: 1,
             coverage: { format: 1, glyphs: captureLIndices },
@@ -128,72 +83,88 @@ async function main() {
         }]
     });
 
-    // Lookup 2: REFLOW (Type 1: Single Substitution)
-    // sub @capture_L by @digits
-    const lookupReflowIdx = addLookup({
-        lookupType: 1,
-        lookupFlag: 0,
-        subtables: [{
-            substFormat: 2,
-            coverage: { format: 1, glyphs: captureLIndices },
-            substitute: digitIndices
-        }]
+    // Lookup: Phase Subs
+    const lookupPhase1Idx = addLookup({
+        lookupType: 1, lookupFlag: 0,
+        subtables: [{ substFormat: 2, coverage: { format: 1, glyphs: captureLIndices }, substitute: phase1LIndices }]
+    });
+    const lookupPhase2Idx = addLookup({
+        lookupType: 1, lookupFlag: 0,
+        subtables: [{ substFormat: 2, coverage: { format: 1, glyphs: captureLIndices }, substitute: phase2LIndices }]
+    });
+    const lookupPhase3Idx = addLookup({
+        lookupType: 1, lookupFlag: 0,
+        subtables: [{ substFormat: 2, coverage: { format: 1, glyphs: captureLIndices }, substitute: groupLIndices }]
     });
 
-    // Feature: calt and friends
+    // Lookup: REFLOW (Type 6 Format 3)
+    const lookupReflowIdx = addLookup({
+        lookupType: 6, lookupFlag: 0,
+        subtables: [
+            {
+                substFormat: 3,
+                backtrackCoverage: [{ format: 1, glyphs: groupLIndices }],
+                inputCoverage: [{ format: 1, glyphs: captureLIndices }],
+                lookaheadCoverage: [],
+                lookupRecords: [{ sequenceIndex: 0, lookupListIndex: lookupPhase1Idx }]
+            },
+            {
+                substFormat: 3,
+                backtrackCoverage: [{ format: 1, glyphs: phase1LIndices }],
+                inputCoverage: [{ format: 1, glyphs: captureLIndices }],
+                lookaheadCoverage: [],
+                lookupRecords: [{ sequenceIndex: 0, lookupListIndex: lookupPhase2Idx }]
+            },
+            {
+                substFormat: 3,
+                backtrackCoverage: [{ format: 1, glyphs: phase2LIndices }],
+                inputCoverage: [{ format: 1, glyphs: captureLIndices }],
+                lookaheadCoverage: [],
+                lookupRecords: [{ sequenceIndex: 0, lookupListIndex: lookupPhase3Idx }]
+            }
+        ]
+    });
+
+    // Lookup: FINAL
+    const lookupFinalIdx = addLookup({
+        lookupType: 1, lookupFlag: 0,
+        subtables: [
+            { substFormat: 2, coverage: { format: 1, glyphs: captureLIndices }, substitute: digitIndices },
+            { substFormat: 2, coverage: { format: 1, glyphs: phase1LIndices }, substitute: digitIndices },
+            { substFormat: 2, coverage: { format: 1, glyphs: phase2LIndices }, substitute: digitIndices }
+        ]
+    });
+
     const featureTags = ['calt', 'dgcd', 'dgco', 'dgdd', 'dgdo', 'dgsp', 'dgun'];
-    
+    const lookupsForFeatures = [lookupCaptureIdx, lookupGroupIdx, lookupReflowIdx, lookupFinalIdx];
+
     featureTags.forEach(tag => {
         let feat = gsub.features.find(f => f.tag === tag);
         if (!feat) {
-            feat = {
-                tag: tag,
-                feature: { featureParams: 0, lookupListIndexes: [] }
-            };
+            feat = { tag: tag, feature: { featureParams: 0, lookupListIndexes: [] } };
             gsub.features.push(feat);
         }
-        feat.feature.lookupListIndexes = [lookupCaptureIdx, lookupGroupIdx, lookupReflowIdx];
+        feat.feature.lookupListIndexes = lookupsForFeatures;
     });
 
-    console.log(`Configured features [${featureTags.join(', ')}] with lookups [${[lookupCaptureIdx, lookupGroupIdx, lookupReflowIdx].join(', ')}]`);
-
-    // Ensure all scripts use these features
     const featureIndices = featureTags.map(tag => gsub.features.findIndex(f => f.tag === tag));
 
-    if (gsub.scripts.length === 0) {
-        // Add a default script if none exists
-        gsub.scripts.push({
-            tag: 'DFLT',
-            script: {
-                defaultLangSys: { reqFeatureIndex: 65535, featureIndices: featureIndices },
-                langSysRecords: []
-            }
-        });
-    } else {
-        gsub.scripts.forEach(s => {
-            const ls = s.script.defaultLangSys;
-            if (ls) {
-                if (!ls.featureIndices) ls.featureIndices = [];
-                featureIndices.forEach(idx => {
-                    if (!ls.featureIndices.includes(idx)) ls.featureIndices.push(idx);
-                });
-            }
-            if (s.script.langSysRecords) {
-                s.script.langSysRecords.forEach(r => {
-                    if (!r.langSys.featureIndices) r.langSys.featureIndices = [];
-                    featureIndices.forEach(idx => {
-                        if (!r.langSys.featureIndices.includes(idx)) r.langSys.featureIndices.push(idx);
-                    });
-                });
-            }
-        });
-    }
+    gsub.scripts.forEach(s => {
+        const ls = s.script.defaultLangSys;
+        if (ls) {
+            if (!ls.featureIndices) ls.featureIndices = [];
+            featureIndices.forEach(idx => { if (!ls.featureIndices.includes(idx)) ls.featureIndices.push(idx); });
+        }
+        if (s.script.langSysRecords) {
+            s.script.langSysRecords.forEach(r => {
+                if (!r.langSys.featureIndices) r.langSys.featureIndices = [];
+                featureIndices.forEach(idx => { if (!r.langSys.featureIndices.includes(idx)) r.langSys.featureIndices.push(idx); });
+            });
+        }
+    });
 
-    // 5. Save
     console.log(`Saving to ${outPath}...`);
-    // Workaround for potential opentype.js issues with manually added glyphs
     if (!font._push) font._push = function() {};
-
     const outBuffer = font.toArrayBuffer();
     fs.writeFileSync(outPath, Buffer.from(outBuffer));
     console.log('Done.');
