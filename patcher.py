@@ -22,7 +22,6 @@ except ImportError as e:
 FONT_NAME_RE = re.compile(r'^([^-]*)(?:(-.*))?$')
 
 DECIMAL_LIST = '0123456789'
-HEXADECIMAL_LIST = '0123456789abcdefABCDEF'
 
 class deferred_map:
     def __init__(self, function, sequence):
@@ -35,13 +34,6 @@ class deferred_map:
         return self._f(self._sequence[ord(i) if isinstance(i, str) else i])
 
 def gen_feature(names, digit_groups, monospace, force_feature):
-    feature_underscores = 'dgun'
-    feature_dot_decimals = 'dgdd'
-
-    dot_name = names['.']
-    underscore_name = names['_']
-    comma_name = names[',']
-
     preamble = f"""languagesystem DFLT dflt;
 languagesystem latn dflt;
 languagesystem cyrl dflt;
@@ -50,11 +42,6 @@ languagesystem kana dflt;
 """
 
     setup = ''.join([ f'@{key}=[{" ".join(value)}];\n' for key, value in digit_groups.items() ])
-
-    # a rule to avoid treating `..0` as decimal point captures the first digit,
-    # but actually it may be a part of `..0x` so allow this rule to override
-    # that capture.
-    false_capture = digit_groups['capture_L'][0]
 
     def ifdef(group): return '' if group in digit_groups else '#'
     def ifndf(group): return '#' if group in digit_groups else ''
@@ -71,15 +58,6 @@ lookup CAPTURE {{
     # Dont' replace glyph ranges that look like YYYYMMDD
     ignore substitute {names['2']} {names['0']} @digits @digits @onezero @digits @onezero @digits;
 
-    # capture digits following `.`, but not `..`
-    sub {dot_name} {dot_name} @digits' by @capture_L;
-    sub {dot_name} @digits' by @capture_R;
-    sub @capture_R @digits' by @capture_R;
-
-    # capture hex digits following 0x
-    sub [{names['0']} {false_capture}] [{names['x']} {names['X']}] @xdigits' by @xcapture_L;
-    sub @xcapture_L @xdigits' by @xcapture_L;
-
     # capture digits that didn't match above
     sub @digits' by @capture_L;
 }} CAPTURE;
@@ -87,28 +65,14 @@ lookup CAPTURE {{
 
 lookup GROUP_DIGITS {{
     rsub @capture_L @capture_L @capture_L' @capture_L @capture_L by @group_L;
-    rsub @xcapture_L @xcapture_L' @xcapture_L @xcapture_L @xcapture_L by @xgroup_L;
 }} GROUP_DIGITS;
-
-lookup GROUP_DECIMALS {{
-    sub [ {dot_name} {comma_name} @group_R ] @capture_R @capture_R @capture_R' @capture_R by @group_R;
-}} GROUP_DECIMALS;
 
 lookup REFLOW_DIGITS {{
     {ifdef("phase1_L")} sub @group_L @capture_L' by @phase1_L;
     {ifdef("phase2_L")} sub @phase1_L @capture_L' by @phase2_L;
     {ifdef("phase3_L")} sub @phase2_L @capture_L' by @phase3_L;
 
-    {ifdef("xphase1_L")} sub @xgroup_L @xcapture_L' by @xphase1_L;
-    {ifdef("xphase2_L")} sub @xphase1_L @xcapture_L' by @xphase2_L;
-    {ifdef("xphase3_L")} sub @xphase2_L @xcapture_L' by @xphase3_L;
-
-    {ifdef("phase2_R")} sub [ @group_R {dot_name} {comma_name} ] @capture_R' @capture_R @group_R by @phase2_R;
-    {ifdef("phase2_R")} sub @phase2_R @capture_R' by @phase1_R;
-
     sub @capture_L' by @digits;
-    sub @xcapture_L' by @xdigits;
-    sub @capture_R' by @digits;
 }} REFLOW_DIGITS;
 """
 
@@ -117,10 +81,7 @@ lookup REFLOW_DIGITS {{
 feature calt {{
     lookup CAPTURE;
     lookup GROUP_DIGITS;
-    lookup GROUP_DECIMALS;
     lookup REFLOW_DIGITS;
-    sub @group_L' by @group_L_underscore;
-    sub @group_R' by @group_R_underscore;
 }} calt;
 """
     wholefile = '\n'.join([ preamble, setup, lookups, features ])
@@ -237,15 +198,11 @@ def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish
     shift = shift_step * 2.5
     digit_groups = {
             "digits": [ names[d] for d in DECIMAL_LIST ],
-            "xdigits": [ names[d] for d in HEXADECIMAL_LIST ],
             "onezero": [ names['0'], names['1'] ],
             }
 
     for group, sep, right, digits, anno in [
-            ( 'xgroup_L',      ' ', False, HEXADECIMAL_LIST, '<' ),
-            ( 'group_R',       ' ',  True, DECIMAL_LIST,     '>' ),
-            ( 'group_L_underscore', '_', False, DECIMAL_LIST,     '{' ),
-            ( 'group_R_underscore', '_',  True, DECIMAL_LIST,     '}' ),
+            ( 'group_L', '_', False, DECIMAL_LIST, '{' ),
             ]:
         if not debug_annotate: anno = None
         table = []
@@ -257,14 +214,12 @@ def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish
                 make_copy(name, names[digit], shift, gap_size, sep, anno)
             table.append(name)
         digit_groups[group] = table
-        if group[0] == 'x': digit_groups[group[1:]] = table[:10]
 
     if monospace:
         for step, group, right, digits, anno in [
-                ( shift_step, 'xphase1_L', False, HEXADECIMAL_LIST, '1' ),
-                ( 0,           'phase1_R',  True, DECIMAL_LIST,     '9' ),
-                ( shift_step, 'xphase2_L', False, HEXADECIMAL_LIST, '2' ),
-                ( 0,           'phase2_R',  True, DECIMAL_LIST,     '8' ),
+                ( shift_step, 'phase1_L', False, DECIMAL_LIST, '1' ),
+                ( shift_step, 'phase2_L', False, DECIMAL_LIST, '2' ),
+                ( shift_step, 'phase3_L', False, DECIMAL_LIST, '3' ),
                 ]:
             if not debug_annotate: anno = None
             shift -= step
@@ -277,15 +232,12 @@ def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish
                     make_copy(name, names[digit], shift, annotation=anno)
                 table.append(name)
             digit_groups[group] = table
-            if group[0] == 'x': digit_groups[group[1:]] = table[:10]
 
     # create placeholder glyphs, not to be rendered.
     font.selection.select(ord(' '))  # prefer select(0x2007) which is space the same width as '0', but may not exist
     font.copyReference()
     for group, digits in [
-            ( 'xcapture_L', HEXADECIMAL_LIST ),
             ( 'capture_L', DECIMAL_LIST ),
-            ( 'capture_R', DECIMAL_LIST ),
             ]:
         table = []
         for digit_i, digit in enumerate(digits):
