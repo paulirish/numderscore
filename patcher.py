@@ -44,10 +44,6 @@ languagesystem kana dflt;
     setup = ''.join([ f'@{key}=[{" ".join(value)}];\n' for key, value in digit_groups.items() ])
 
     def ifdef(group): return '' if group in digit_groups else '#'
-    def ifndf(group): return '#' if group in digit_groups else ''
-
-    m = '' if monospace else '#'
-    not_m = '#' if monospace else ''
 
     # https://adobe-type-tools.github.io/afdko/OpenTypeFeatureFileSpecification.html
     lookups = f"""
@@ -76,7 +72,6 @@ lookup REFLOW_DIGITS {{
 }} REFLOW_DIGITS;
 """
 
-# TODO: build this calt feature dynamically based on arg.
     features = f"""
 feature calt {{
     lookup CAPTURE;
@@ -96,32 +91,23 @@ def resize_glyph(glyph, font, from_name, gap_size, monospace):
         # Doing this and then undoing it leaves us with a better
         # state than if we don't do it at all.
         glyph.useRefsMetrics(from_name, False)
-        if gap_size < 0:
-            # Decimal seperator
-            glyph.width += abs(gap_size)
-        else:
-            # glyph seems to grow on its own with this transform
-            mat = psMat.translate(abs(gap_size), 0)
-            glyph.transform(mat)
+        # glyph seems to grow on its own with this transform
+        mat = psMat.translate(abs(gap_size), 0)
+        glyph.transform(mat)
 
 def insert_separator(glyph, font, separator, gap_size, monospace):
     separator_width = font[separator].width
     x_shift = (abs(gap_size) - separator_width) // 2
-    if gap_size < 0:
-        x_shift = glyph.width - abs(gap_size) + x_shift
 
-    if separator == 'underscore':
-        # Calculate y_shift to position underscore slightly below baseline
-        height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1]
-        underscore_ymax = font[separator].boundingBox()[3]
-        y_shift = -(height_of_x / 10) - underscore_ymax
+    # Calculate y_shift to position underscore slightly below baseline
+    height_of_x = font['x'].boundingBox()[3] - font['x'].boundingBox()[1]
+    underscore_ymax = font[separator].boundingBox()[3]
+    y_shift = -(height_of_x / 10) - underscore_ymax
 
-        # Shorten the underscore and adjust x_shift for centering
-        x_scale = 0.75
-        x_shift += (separator_width * x_scale) * x_scale / 4
-        mat = psMat.compose(psMat.scale(x_scale, 1), psMat.translate(x_shift, y_shift))
-    else:
-        mat = psMat.translate(x_shift, 0)
+    # Shorten the underscore and adjust x_shift for centering
+    x_scale = 0.75
+    x_shift += (separator_width * x_scale) * x_scale / 4
+    mat = psMat.compose(psMat.scale(x_scale, 1), psMat.translate(x_shift, y_shift))
 
     glyph.addReference(separator, mat)
 
@@ -201,35 +187,29 @@ def patch_one_font(font, rename_font, force_feature, monospace, gap_size, squish
             "onezero": [ names['0'], names['1'] ],
             }
 
-    for group, sep, right, digits, anno in [
-            ( 'group_L', '_', False, DECIMAL_LIST, '{' ),
+    for group, sep, digits, anno in [
+            ( 'group_L', '_', DECIMAL_LIST, '{' ),
             ]:
         if not debug_annotate: anno = None
         table = []
         for digit_i, digit in enumerate(digits):
             name = group + f'_d{digit_i}'
-            if right:
-                make_copy(name, names[digit], -shift, -gap_size, sep, anno)
-            else:
-                make_copy(name, names[digit], shift, gap_size, sep, anno)
+            make_copy(name, names[digit], shift, gap_size, sep, anno)
             table.append(name)
         digit_groups[group] = table
 
     if monospace:
-        for step, group, right, digits, anno in [
-                ( shift_step, 'phase1_L', False, DECIMAL_LIST, '1' ),
-                ( shift_step, 'phase2_L', False, DECIMAL_LIST, '2' ),
-                ( shift_step, 'phase3_L', False, DECIMAL_LIST, '3' ),
+        for step, group, digits, anno in [
+                ( shift_step, 'phase1_L', DECIMAL_LIST, '1' ),
+                ( shift_step, 'phase2_L', DECIMAL_LIST, '2' ),
+                ( shift_step, 'phase3_L', DECIMAL_LIST, '3' ),
                 ]:
             if not debug_annotate: anno = None
             shift -= step
             table = []
             for digit_i, digit in enumerate(digits):
                 name = group + f'_d{digit_i}'
-                if right:
-                    make_copy(name, names[digit], -shift, annotation=anno)
-                else:
-                    make_copy(name, names[digit], shift, annotation=anno)
+                make_copy(name, names[digit], shift, annotation=anno)
                 table.append(name)
             digit_groups[group] = table
 
