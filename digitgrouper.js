@@ -21,7 +21,7 @@ async function main() {
 
     function createFlattenedGlyph(name, origIdx, widthAdd = 0, hasComma = false) {
         const origGlyph = font.glyphs.get(origIdx);
-        
+
         // Start with a clone of the original path
         const newPath = new opentype.Path();
         if (origGlyph.path && origGlyph.path.commands) {
@@ -59,7 +59,7 @@ async function main() {
 
     const captureLIndices = digits.map(d => createFlattenedGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
     const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth, true));
-    
+
     // For propagation
     const phase1LIndices = digits.map(d => createFlattenedGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
     const phase2LIndices = digits.map(d => createFlattenedGlyph(`phase2_L_d${d}`, font.charToGlyphIndex(d)));
