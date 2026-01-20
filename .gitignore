@@ -8,3 +8,6 @@ fonts/*
 site/fonts/*.woff2
 site/downloads/*.zip
 site/_data/manifest.json
+node_modules/
+test_screenshot.png
+diff.png
