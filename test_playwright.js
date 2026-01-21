@@ -66,6 +66,7 @@ const { PNG } = require('pngjs');
       process.exit(1);
   } else {
       console.log('Test passed: Logic check in HTML passed');
+      console.log('Output:', textContent);
   }
 
   if (numDiffPixels > 0) {
