@@ -124,6 +124,46 @@ async function main() {
         return gsub.lookups.length - 1;
     }
 
+    // Convert array of indices to Coverage Ranges (Format 2)
+    function toRanges(indices) {
+        const sorted = [...indices].sort((a, b) => a - b);
+        const ranges = [];
+        if (sorted.length === 0) return [];
+        let start = sorted[0];
+        let end = sorted[0];
+        // For Coverage Format 2, 'index' is the coverage index (0, 1, 2...)
+        // But since we are creating a Coverage table to MATCH, the 'index' field
+        // in RangeRecord represents the *Coverage Index* corresponding to the StartGlyphID.
+        // If we want to cover all glyphs in the set, the coverage indices should be sequential from 0?
+        // Yes, if we are defining a Coverage table for substitution input.
+        // But for Backtrack/Lookahead, the "coverage index" is not used for substitution lookup usually?
+        // Wait. Coverage tables in Backtrack/Lookahead are just sets of glyphs.
+        // The spec says "The Coverage index...".
+        // In Format 2, we must provide it.
+        // Let's assume we map the glyphs to 0..N-1.
+
+        // However, captureLIndices are sequential in the font because we created them sequentially!
+        // captureLIndices[i] = Base + i.
+
+        let covIndex = 0;
+
+        for (let i = 1; i < sorted.length; i++) {
+            if (sorted[i] === end + 1) {
+                end = sorted[i];
+            } else {
+                ranges.push({ start: start, end: end, index: covIndex });
+                covIndex += (end - start + 1);
+                start = sorted[i];
+                end = sorted[i];
+            }
+        }
+        ranges.push({ start: start, end: end, index: covIndex });
+        return ranges;
+    }
+
+    const captureLRanges = toRanges(captureLIndices);
+    const captureLCov = { format: 2, ranges: captureLRanges };
+
     // Lookup 0: CAPTURE
     const lookupCaptureIdx = addLookup({
         lookupType: 1, lookupFlag: 0,
@@ -131,20 +171,20 @@ async function main() {
     });
 
     // Lookup 1: GROUP_DIGITS (Type 8)
-    // Matches patcher.py logic: Backtrack 2, Input 1, Lookahead 2.
-    // Lookahead only sees digits (captureLIndices) to avoid recursive grouping.
+    // Using Coverage Format 2 for Backtrack and Lookahead to potentially fix parsing issues
+    // while maintaining Lookahead 2 logic.
     const lookupGroupIdx = addLookup({
         lookupType: 8, lookupFlag: 0,
         subtables: [{
             substFormat: 1,
-            coverage: { format: 1, glyphs: captureLIndices },
+            coverage: { format: 1, glyphs: captureLIndices }, // Input coverage usually Format 1 for SingleSubst
             backtrackCoverage: [
-                { format: 1, glyphs: captureLIndices },
-                { format: 1, glyphs: captureLIndices }
+                captureLCov,
+                captureLCov
             ],
             lookaheadCoverage: [
-                { format: 1, glyphs: captureLIndices },
-                { format: 1, glyphs: captureLIndices }
+                captureLCov,
+                captureLCov
             ],
             substitutes: groupLIndices
         }]
