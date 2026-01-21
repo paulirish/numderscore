@@ -89,7 +89,10 @@ async function main() {
         subtables: [{
             substFormat: 1,
             coverage: { format: 1, glyphs: captureLIndices },
-            backtrackCoverage: [], // Removed backtrack constraints to allow grouping at start of line
+            backtrackCoverage: [
+                { format: 1, glyphs: captureLIndices },
+                { format: 1, glyphs: captureLIndices }
+            ],
             lookaheadCoverage: [
                 { format: 1, glyphs: allGlyphs }, // Allow group glyphs in lookahead for chaining
                 { format: 1, glyphs: allGlyphs },
