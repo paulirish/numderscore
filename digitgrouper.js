@@ -16,32 +16,82 @@ async function main() {
 
     const digits = '0123456789'.split('');
     const digitIndices = digits.map(d => font.charToGlyphIndex(d));
+
+    // Get metrics for underscore positioning
+    const xIndex = font.charToGlyphIndex('x');
+    const xGlyph = font.glyphs.get(xIndex);
+    const xBox = xGlyph.getBoundingBox();
+    const height_of_x = xBox.y2 - xBox.y1;
+
+    const underscoreIndex = font.charToGlyphIndex('_');
+    const underscoreGlyph = font.glyphs.get(underscoreIndex);
+    const underscoreBox = underscoreGlyph.getBoundingBox();
+    const underscore_ymax = underscoreBox.y2;
+    const separator_width = underscoreGlyph.advanceWidth;
+
     const commaIndex = font.charToGlyphIndex(',');
     const commaGlyph = font.glyphs.get(commaIndex);
+    // patcher.py uses comma width as the default gap size for non-monospace fonts
+    const gap_size = commaGlyph.advanceWidth;
 
-    function createFlattenedGlyph(name, origIdx, widthAdd = 0, hasComma = false) {
+
+    function createFlattenedGlyph(name, origIdx, widthAdd = 0, hasUnderscore = false) {
         const origGlyph = font.glyphs.get(origIdx);
 
         // Start with a clone of the original path
         const newPath = new opentype.Path();
+
+        // If we are grouping, we shift the digit to the right by the gap size (widthAdd)
+        // to make room for the underscore on the left.
+        const digitShiftX = hasUnderscore ? widthAdd : 0;
+
         if (origGlyph.path && origGlyph.path.commands) {
-            newPath.commands = JSON.parse(JSON.stringify(origGlyph.path.commands));
+            const digitCommands = JSON.parse(JSON.stringify(origGlyph.path.commands));
+            if (digitShiftX !== 0) {
+                digitCommands.forEach(cmd => {
+                    if ('x' in cmd) cmd.x += digitShiftX;
+                    if ('y' in cmd) cmd.y += 0;
+                    if ('x1' in cmd) cmd.x1 += digitShiftX;
+                    if ('y1' in cmd) cmd.y1 += 0;
+                    if ('x2' in cmd) cmd.x2 += digitShiftX;
+                    if ('y2' in cmd) cmd.y2 += 0;
+                });
+            }
+            newPath.commands = digitCommands;
         }
 
-        if (hasComma && commaGlyph.path && commaGlyph.path.commands) {
-            // Offset the comma path to the right of the digit
-            const dx = origGlyph.advanceWidth;
-            const dy = 0;
-            const commaCommands = JSON.parse(JSON.stringify(commaGlyph.path.commands));
-            commaCommands.forEach(cmd => {
-                if ('x' in cmd) cmd.x += dx;
-                if ('y' in cmd) cmd.y += dy;
-                if ('x1' in cmd) cmd.x1 += dx;
-                if ('y1' in cmd) cmd.y1 += dy;
-                if ('x2' in cmd) cmd.x2 += dx;
-                if ('y2' in cmd) cmd.y2 += dy;
+        if (hasUnderscore && underscoreGlyph.path && underscoreGlyph.path.commands) {
+            // Implement patcher.py logic for underscore positioning
+            // x_shift = (abs(gap_size) - separator_width) // 2
+            let x_shift = (widthAdd - separator_width) / 2;
+
+            // y_shift = -(height_of_x / 10) - underscore_ymax
+            const y_shift = -(height_of_x / 10) - underscore_ymax;
+
+            // x_scale = 0.75
+            const x_scale = 0.75;
+
+            // x_shift += (separator_width * x_scale) * x_scale / 4
+            x_shift += (separator_width * x_scale) * x_scale / 4;
+
+            const underscoreCommands = JSON.parse(JSON.stringify(underscoreGlyph.path.commands));
+            underscoreCommands.forEach(cmd => {
+                // Apply scaling
+                if ('x' in cmd) cmd.x = cmd.x * x_scale;
+                if ('x1' in cmd) cmd.x1 = cmd.x1 * x_scale;
+                if ('x2' in cmd) cmd.x2 = cmd.x2 * x_scale;
+
+                // Apply translation
+                if ('x' in cmd) cmd.x += x_shift;
+                if ('y' in cmd) cmd.y += y_shift;
+
+                if ('x1' in cmd) cmd.x1 += x_shift;
+                if ('y1' in cmd) cmd.y1 += y_shift;
+
+                if ('x2' in cmd) cmd.x2 += x_shift;
+                if ('y2' in cmd) cmd.y2 += y_shift;
             });
-            newPath.commands.push(...commaCommands);
+            newPath.commands.push(...underscoreCommands);
         }
 
         const newGlyph = new opentype.Glyph({
@@ -58,10 +108,9 @@ async function main() {
     }
 
     const captureLIndices = digits.map(d => createFlattenedGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
-    // Use a larger width addition (2x comma width) to ensure gap detection works in test.html
-    const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth * 2, true));
 
-    // For propagation
+    const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), gap_size, true));
+
     const phase1LIndices = digits.map(d => createFlattenedGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
     const phase2LIndices = digits.map(d => createFlattenedGlyph(`phase2_L_d${d}`, font.charToGlyphIndex(d)));
 
@@ -82,8 +131,8 @@ async function main() {
     });
 
     // Lookup 1: GROUP_DIGITS (Type 8)
-    // Relaxed constraints to allow recursive grouping
-    const allGlyphs = [...captureLIndices, ...groupLIndices];
+    // Matches patcher.py logic: Backtrack 2, Input 1, Lookahead 2.
+    // Lookahead only sees digits (captureLIndices) to avoid recursive grouping.
     const lookupGroupIdx = addLookup({
         lookupType: 8, lookupFlag: 0,
         subtables: [{
@@ -94,9 +143,8 @@ async function main() {
                 { format: 1, glyphs: captureLIndices }
             ],
             lookaheadCoverage: [
-                { format: 1, glyphs: allGlyphs }, // Allow group glyphs in lookahead for chaining
-                { format: 1, glyphs: allGlyphs },
-                { format: 1, glyphs: allGlyphs }
+                { format: 1, glyphs: captureLIndices },
+                { format: 1, glyphs: captureLIndices }
             ],
             substitutes: groupLIndices
         }]
@@ -138,7 +186,7 @@ async function main() {
                 substFormat: 3,
                 backtrackCoverage: [{ format: 1, glyphs: phase2LIndices }],
                 inputCoverage: [{ format: 1, glyphs: captureLIndices }],
-                lookaheadCoverage: [{ format: 1, glyphs: captureLIndices }], // Ensure followed by digit to prevent trailing comma
+                lookaheadCoverage: [{ format: 1, glyphs: captureLIndices }],
                 lookupRecords: [{ sequenceIndex: 0, lookupListIndex: lookupPhase3Idx }]
             }
         ]
