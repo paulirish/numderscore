@@ -376,7 +376,8 @@ time                       system      flow_type   latency_ns  epoch            
       });
       document.querySelector('#choice').dispatchEvent(new Event('change'));
 
-      // Handle font source change
+      // Handle font source change..
+      // TODO:  fix this so that if we set 'selected' on a diff dropdown option, that is used on load.
       const fontStyle = document.querySelector('#font-style');
       document.querySelector('#font-src').addEventListener('change', async e => {
         const newSrc = e.target.value;

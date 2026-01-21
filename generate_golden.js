@@ -23,6 +23,7 @@ const path = require('path');
     process.exit(1);
   }
 
+  // The golden image represents the Times-New-Roman-DG.ttf with underscore grouping. That's the effect we want.
   await canvasElement.screenshot({ path: 'golden.png' });
   console.log('golden.png created');
 
