@@ -9,6 +9,9 @@
 <body>
     <h1>DigitGrouper Browser Test</h1>
     <div id="status">Waiting...</div>
+
+      <div id="canvas-test-container" style="padding: 10px; border-bottom: 1px solid #ccc;"></div>
+
     <script>
         async function runTest() {
             const statusDiv = document.getElementById('status');
@@ -37,10 +40,14 @@
                 if (!fontFaceRule.includes("@font-face")) {
                      throw new Error('generateFontFace failed');
                 }
+                document.head.insertAdjacentHTML('beforeend', `<style>${fontFaceRule}</style>`);
+                 await document.fonts.load('40px "TestFont"');
 
                 console.log('Font processed successfully. Output size:', processedBuffer.byteLength);
                 statusDiv.textContent = 'Success';
                 statusDiv.dataset.result = 'success'; // For Playwright to check
+
+                runCanvasTest();
 
             } catch (err) {
                 console.error(err);
@@ -48,6 +55,153 @@
                 statusDiv.dataset.result = 'error';
             }
         }
+
+
+              // Canvas test
+      async function runCanvasTest() {
+        const container = document.getElementById('canvas-test-container');
+        // Clear previous results
+        container.innerHTML = '';
+
+        await document.fonts.ready;
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 150;
+        const ctx = canvas.getContext('2d', {willReadFrequently: true});
+        const text = '123456789';
+        const fontSize = 40;
+
+        const x = 20;
+        const y = 80;
+
+        ctx.font = `${fontSize}px "TestFont"`;
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = 'black';
+
+        // Ensure dgun is active
+        canvas.style.fontFeatureSettings = '"dgun" 1';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillText(text, x, y);
+
+        container.appendChild(canvas);
+        const testResults = document.createElement('pre');
+        container.appendChild(testResults);
+
+        // Pixel analysis to find glyph boundaries
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // 1. Compute horizontal projection (ink per column)
+        // We scan only the middle/upper part of the digits to avoid underscores or baseline noise connecting them.
+        const projection = new Array(width).fill(0);
+        const scanStart = y - fontSize * 0.7; // Scan from 70% above baseline
+        const scanEnd = y - fontSize * 0.2;   // To 20% above baseline
+
+        for (let col = 0; col < width; col++) {
+          for (let row = Math.floor(scanStart); row < Math.floor(scanEnd); row++) {
+            if (row < 0 || row >= height) continue;
+            const alpha = data[(row * width + col) * 4 + 3];
+            if (alpha > 30) projection[col] += alpha;
+          }
+        }
+
+        // 2. Identify glyph clusters
+        let clusters = [];
+        let inCluster = false;
+        let start = 0;
+        for (let col = 0; col < width; col++) {
+          const hasInk = projection[col] > 0;
+          if (hasInk && !inCluster) {
+            inCluster = true;
+            start = col;
+          } else if (!hasInk && inCluster) {
+            inCluster = false;
+            clusters.push({start, end: col - 1});
+          }
+        }
+
+        // If we still don't have 9, maybe some are touching. Try to split large clusters.
+        if (clusters.length > 0 && clusters.length < 9) {
+          const avgWidth = clusters.reduce((acc, c) => acc + (c.end - c.start), 0) / clusters.length;
+          const newClusters = [];
+          clusters.forEach(c => {
+            const cWidth = c.end - c.start;
+            if (cWidth > avgWidth * 1.6) {
+              // This cluster is likely 2 or 3 digits merged.
+              // For this simple test, we'll just split it evenly,
+              // though a "dip" detection would be better.
+              const numDigits = Math.round(cWidth / avgWidth);
+              for (let i = 0; i < numDigits; i++) {
+                newClusters.push({
+                  start: c.start + (i * cWidth / numDigits),
+                  end: c.start + ((i + 1) * cWidth / numDigits)
+                });
+              }
+            } else {
+              newClusters.push(c);
+            }
+          });
+          clusters = newClusters;
+        }
+
+        testResults.textContent = `Detected ${clusters.length} glyph clusters.\n`;
+
+        if (clusters.length === 9) {
+          const gaps = [];
+          for (let i = 0; i < clusters.length - 1; i++) {
+            gaps.push(clusters[i + 1].start - clusters[i].end);
+          }
+
+          testResults.textContent += `Gaps: [${gaps.join(', ')}]\n`;
+
+          // Expected larger gaps are at index 2 (after '3') and index 5 (after '6')
+          // because indices are 0-based: 0(1)1, 1(2)2, 2(3)gap, 3(4)4...
+          const gapAt3 = gaps[2];
+          const gapAt6 = gaps[5];
+          const otherGaps = gaps.filter((_, i) => i !== 2 && i !== 5);
+          const avgOtherGap = otherGaps.reduce((a, b) => a + b, 0) / otherGaps.length;
+
+          testResults.textContent += `Avg normal gap: ${avgOtherGap.toFixed(2)}\n`;
+          testResults.textContent += `Gap after '3': ${gapAt3}\n`;
+          testResults.textContent += `Gap after '6': ${gapAt6}\n`;
+
+          const threshold = avgOtherGap * 1.5;
+          const isGrouped = gapAt3 > threshold && gapAt6 > threshold;
+
+          if (isGrouped) {
+            testResults.textContent += "PASSED: Larger gaps detected at grouping positions!\n";
+          } else {
+            testResults.textContent += "FAILED: Gaps are uniform. No grouping detected.\n";
+          }
+
+          // Visual markers for clusters
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+          clusters.forEach(c => {
+            ctx.strokeRect(c.start, y - fontSize, c.end - c.start, fontSize + 10);
+          });
+        } else {
+          testResults.textContent += "FAILED: Could not isolate 9 individual digits. Check font size/overlap.\n";
+          // If they overlap, we might need a different threshold or the font is just too tight
+        }
+
+        // Check for ink below baseline (underscores)
+        let foundInkBelow = 0;
+        for (let row = y + 2; row < y + 15; row++) {
+          for (let col = 0; col < width; col++) {
+            const alpha = data[(row * width + col) * 4 + 3];
+            if (alpha > 32) foundInkBelow++;
+          }
+        }
+        testResults.textContent += `Ink pixels below baseline: ${foundInkBelow}\n`;
+        if (foundInkBelow > 10) {
+          testResults.textContent += "Detected: Underscores present.\n";
+        } else {
+          testResults.textContent += "Detected: No underscores (likely space grouping).\n";
+        }
+      }
+
 
         window.addEventListener('load', runTest);
     </script>
