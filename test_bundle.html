@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigitGrouper Browser Test</title>
+    <script src="dist/digitgrouper.browser.js"></script>
+</head>
+<body>
+    <h1>DigitGrouper Browser Test</h1>
+    <div id="status">Waiting...</div>
+    <script>
+        async function runTest() {
+            const statusDiv = document.getElementById('status');
+            try {
+                if (typeof DigitGrouper === 'undefined') {
+                    throw new Error('DigitGrouper global is undefined');
+                }
+
+                // Fetch the font file (assuming server runs from root)
+                const response = await fetch('out/Times-New-Roman.ttf');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch font: ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Process the font
+                console.log('Processing font...');
+                const processedBuffer = DigitGrouper.processFont(arrayBuffer);
+
+                if (!processedBuffer || processedBuffer.byteLength === 0) {
+                    throw new Error('Processed buffer is empty or invalid');
+                }
+
+                // Verify generateFontFace
+                const fontFaceRule = DigitGrouper.generateFontFace('TestFont', 'test.ttf');
+                if (!fontFaceRule.includes("@font-face")) {
+                     throw new Error('generateFontFace failed');
+                }
+
+                console.log('Font processed successfully. Output size:', processedBuffer.byteLength);
+                statusDiv.textContent = 'Success';
+                statusDiv.dataset.result = 'success'; // For Playwright to check
+
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = 'Error: ' + err.message;
+                statusDiv.dataset.result = 'error';
+            }
+        }
+
+        window.addEventListener('load', runTest);
+    </script>
+</body>
+</html>

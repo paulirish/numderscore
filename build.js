@@ -1,7 +1,7 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-  entryPoints: ['lib/digitgrouper-core.js'],
+  entryPoints: ['digitgrouper.js'],
   bundle: true,
   outfile: 'dist/digitgrouper.browser.js',
   format: 'iife',
