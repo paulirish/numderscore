@@ -35,8 +35,12 @@
                     throw new Error('Processed buffer is empty or invalid');
                 }
 
+                // Create blob URL for the processed font
+                const blob = new Blob([processedBuffer], { type: 'font/ttf' });
+                const blobUrl = URL.createObjectURL(blob);
+
                 // Verify generateFontFace
-                const fontFaceRule = DigitGrouper.generateFontFace('TestFont', 'test.ttf');
+                const fontFaceRule = DigitGrouper.generateFontFace('TestFont', blobUrl);
                 if (!fontFaceRule.includes("@font-face")) {
                      throw new Error('generateFontFace failed');
                 }
