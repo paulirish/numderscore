@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/paulirish/numderspace#readme",
   "devDependencies": {
-    "opentype.js": "^1.3.4",
-    "tesseract.js": "^7.0.0"
+    "esbuild": "^0.27.2",
+    "opentype.js": "^1.3.4"
   },
   "dependencies": {
     "pixelmatch": "^7.1.0",
