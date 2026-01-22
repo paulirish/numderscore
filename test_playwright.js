@@ -57,7 +57,7 @@ const { PNG } = require('pngjs');
   });
 
   // Clean up test screenshot
-  fs.unlinkSync(screenshotPath);
+  // fs.unlinkSync(screenshotPath);
   await browser.close();
 
   if (!textContent.includes('PASSED: Larger gaps detected at grouping positions!')) {
