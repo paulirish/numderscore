@@ -6,7 +6,7 @@ const screenshotPath = path.join(__dirname, 'test_screenshot.png');
 Tesseract.recognize(
   screenshotPath,
   'eng',
-  { logger: m => console.log(m) }
+  { logger: m => console.debug(m) }
 ).then(({ data: { text } }) => {
   console.log('OCR Result:');
   console.log(text);
