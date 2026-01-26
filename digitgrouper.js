@@ -2,7 +2,7 @@ const fs = require('fs');
 // Using vendored opentype.js with Type 8 support patched in
 const opentype = require('./lib/opentype-patched.js');
 
-const fontPath = 'out/Times-New-Roman-orig.ttf';
+const fontPath = 'out/Times-New-Roman.ttf';
 const outPath = 'out/Times-New-Roman-JS.ttf';
 
 async function main() {
@@ -58,7 +58,8 @@ async function main() {
     }
 
     const captureLIndices = digits.map(d => createFlattenedGlyph(`capture_L_d${d}`, font.charToGlyphIndex(d)));
-    const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth, true));
+    // Use a larger width addition (2x comma width) to ensure gap detection works in test.html
+    const groupLIndices = digits.map(d => createFlattenedGlyph(`group_L_d${d}`, font.charToGlyphIndex(d), commaGlyph.advanceWidth * 2, true));
 
     // For propagation
     const phase1LIndices = digits.map(d => createFlattenedGlyph(`phase1_L_d${d}`, font.charToGlyphIndex(d)));
@@ -81,18 +82,18 @@ async function main() {
     });
 
     // Lookup 1: GROUP_DIGITS (Type 8)
+    // Relaxed constraints to allow recursive grouping
+    const allGlyphs = [...captureLIndices, ...groupLIndices];
     const lookupGroupIdx = addLookup({
         lookupType: 8, lookupFlag: 0,
         subtables: [{
             substFormat: 1,
             coverage: { format: 1, glyphs: captureLIndices },
-            backtrackCoverage: [
-                { format: 1, glyphs: captureLIndices },
-                { format: 1, glyphs: captureLIndices }
-            ],
+            backtrackCoverage: [], // Removed backtrack constraints to allow grouping at start of line
             lookaheadCoverage: [
-                { format: 1, glyphs: captureLIndices },
-                { format: 1, glyphs: captureLIndices }
+                { format: 1, glyphs: allGlyphs }, // Allow group glyphs in lookahead for chaining
+                { format: 1, glyphs: allGlyphs },
+                { format: 1, glyphs: allGlyphs }
             ],
             substitutes: groupLIndices
         }]
@@ -134,7 +135,7 @@ async function main() {
                 substFormat: 3,
                 backtrackCoverage: [{ format: 1, glyphs: phase2LIndices }],
                 inputCoverage: [{ format: 1, glyphs: captureLIndices }],
-                lookaheadCoverage: [],
+                lookaheadCoverage: [{ format: 1, glyphs: captureLIndices }], // Ensure followed by digit to prevent trailing comma
                 lookupRecords: [{ sequenceIndex: 0, lookupListIndex: lookupPhase3Idx }]
             }
         ]

@@ -1,7 +1,7 @@
 const opentype = require('opentype.js');
 const fs = require('fs');
 
-const fontPathOrig = 'out/Times-New-Roman-orig.ttf';
+const fontPathOrig = 'out/Times-New-Roman.ttf';
 const fontPathPatched = process.argv[2] || 'out/Times-New-Roman-DG.ttf';
 
 function loadFont(path) {
